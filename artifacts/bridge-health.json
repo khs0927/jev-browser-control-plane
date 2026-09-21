@@ -1,0 +1,13 @@
+{
+  "status": "ok",
+  "service": "browser-bridge",
+  "agentConnected": false,
+  "agent": null,
+  "connectedAt": null,
+  "pendingRequests": 0,
+  "gate": {
+    "scopedWrites": false,
+    "scopes": {}
+  },
+  "toolCatalogCached": false
+}

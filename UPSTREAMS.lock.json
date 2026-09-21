@@ -1,0 +1,10 @@
+{
+  "generated_at": "2026-09-22T03:02:00+09:00",
+  "upstreams": {
+    "jev-ultrafast": "1231850a0bf1a0c0341fe408ef1668dbbfdfac46",
+    "browser-harness": "afbcc381b963040c19627d788e40c7e7663171ee",
+    "workflow-use": "5d2d19fe8835cc86f1bf3e04302a5000d590f249",
+    "typesafe-sdk-python": "0ffd094c72ed9445223060b24ffd7a56aa781fb4",
+    "system-one-adapter-python": "adffc2eab300a4fa3c0e92252d4ffd6ceaa53700"
+  }
+}
