@@ -64,8 +64,9 @@ def managed_instruction_block() -> str:
         f"{BEGIN}\n"
         "For browser tasks, use the installed aside-jev skill and route bounded "
         "action selection through the jev-control-plane MCP before choosing a "
-        "browser action yourself. Execute only caller-owned candidates returned "
-        "by jev_step. Re-observe after page changes. Do not use Jev decisions "
+        "browser action yourself. Prefer jev_browser_run for bounded multi-step "
+        "flows; otherwise execute only caller-owned candidates returned by "
+        "jev_step. Re-observe after page changes. Do not use Jev decisions "
         "as user approval for sensitive actions.\n"
         f"{END}"
     )
