@@ -37,7 +37,11 @@ def test_zen_free_uses_system_one_and_own_client_id(monkeypatch):
         )
 
     monkeypatch.setattr("jev_control_plane.provider.urlopen", fake_urlopen)
-    provider = ZenFreeProvider(client_id="our-client", timeout=3.0)
+    provider = ZenFreeProvider(
+        client_id="our-client",
+        user_agent="OurClient/1.0",
+        timeout=3.0,
+    )
     result = provider.system_one(
         state={"request": "x"},
         questions={
@@ -51,6 +55,7 @@ def test_zen_free_uses_system_one_and_own_client_id(monkeypatch):
 
     assert seen["url"] == "https://opencode.ai/zen/v1/systemone"
     assert seen["headers"]["x-opencode-client"] == "our-client"
+    assert seen["headers"]["user-agent"] == "OurClient/1.0"
     assert "authorization" not in seen["headers"]
     assert seen["body"]["model"] == "jev-1.13-free"
     assert result["answers"]["route"]["choice"] == "a"
