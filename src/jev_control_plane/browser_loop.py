@@ -9,6 +9,7 @@ from time import monotonic
 from typing import Any, Callable
 
 from .bridge import BrowserBridge, BrowserBridgeError
+from .provider import JevProviderError
 
 ELEMENT = re.compile(
     r'^\s*-\s+(?P<role>link|button|textbox|searchbox|checkbox|radio|tab|combobox)'
@@ -246,19 +247,24 @@ def run_browser_flow(
                     error="no unique authorized action is visible on the current page",
                 )
 
-            decision = chooser(
-                goal=goal,
-                observation=compact_snapshot(
-                    current_text,
+            try:
+                decision = chooser(
                     goal=goal,
-                    rules=rules,
-                    completion_text=completion_text,
-                ),
-                candidates=candidates,
-                history=history[-6:],
-                min_confidence=min_confidence,
-            )
-            choice = decision["choice_id"]
+                    observation=compact_snapshot(
+                        current_text,
+                        goal=goal,
+                        rules=rules,
+                        completion_text=completion_text,
+                    ),
+                    candidates=candidates,
+                    history=history[-6:],
+                    min_confidence=min_confidence,
+                )
+                choice = decision["choice_id"]
+            except JevProviderError as exc:
+                return result("provider_error", error=exc.code)
+            except (KeyError, TypeError, ValueError):
+                return result("invalid_choice")
             entry = {
                 "step": step,
                 "choice_id": choice,
