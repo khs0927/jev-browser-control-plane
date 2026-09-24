@@ -106,14 +106,21 @@ def _choose(
     known = {item.id for item in parsed}
     if any(key not in known for key in probabilities):
         raise ValueError("Jev returned probability for an unknown candidate")
+    checked_probabilities = {
+        item.id: validate_confidence(
+            probabilities.get(item.id, 0.0),
+            name=f"probability[{item.id}]",
+        )
+        for item in parsed
+    }
+    if probabilities and abs(sum(checked_probabilities.values()) - 1.0) > 0.02:
+        raise ValueError("Jev probabilities must sum to one")
 
     return {
         "choice_id": candidate.id,
         "suggested_choice_id": suggested,
         "confidence": confidence,
-        "probabilities": {
-            item.id: float(probabilities.get(item.id, 0.0)) for item in parsed
-        },
+        "probabilities": checked_probabilities,
         "candidate": candidate.to_dict(),
         "downgraded_to_abstain": downgraded,
         "provider": _provider().status().source,
@@ -217,6 +224,7 @@ async def jev_browser_run(
         run_browser_flow,
         bridge,
         chooser=_choose,
+        evaluator=_system_one,
         goal=goal,
         action_rules=action_rules,
         completion_text=completion_text,

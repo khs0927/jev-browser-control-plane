@@ -164,6 +164,7 @@ def run_browser_flow(
     bridge: BrowserBridge,
     *,
     chooser: Callable[..., dict[str, Any]],
+    evaluator: Callable[..., dict[str, Any]] | None = None,
     goal: str,
     action_rules: list[dict[str, Any]],
     completion_text: str,
@@ -284,6 +285,80 @@ def run_browser_flow(
                     return result("stale_observation")
                 if completion_text not in confirmed:
                     return result("stale_observation")
+                if evaluator is not None:
+                    try:
+                        assessment = evaluator(
+                            state={
+                                "goal": goal,
+                                "visible_completion": completion_text,
+                                "completion_observed": True,
+                                "final_observation": compact_snapshot(
+                                    confirmed,
+                                    goal=goal,
+                                    rules=rules,
+                                    completion_text=completion_text,
+                                ),
+                                "executed_actions": [
+                                    {
+                                        "step": item["step"],
+                                        "choice_id": item["choice_id"],
+                                        "execution_state": item["execution_state"],
+                                    }
+                                    for item in history
+                                    if item.get("executed")
+                                ],
+                            },
+                            questions={
+                                "completed": {
+                                    "type": "noul",
+                                    "instructions": (
+                                        "Does the observed page establish that the requested goal "
+                                        "is complete? Judge the observation, not the supplied label."
+                                    ),
+                                    "criteria": {
+                                        "true": "The visible page state satisfies the requested goal.",
+                                        "false": "The visible page state does not establish completion.",
+                                    },
+                                },
+                                "risk": {
+                                    "type": "score",
+                                    "instructions": (
+                                        "Assess only the browser actions actually executed in this run."
+                                    ),
+                                    "criteria": [
+                                        "No sensitive or irreversible action.",
+                                        "A reversible user-data change.",
+                                        "A sensitive, external, or irreversible action.",
+                                    ],
+                                },
+                            },
+                        )
+                        answers = assessment["answers"]
+                        completed_answer = answers["completed"]
+                        risk_answer = answers["risk"]
+                        completed_score = float(completed_answer["noul"])
+                        risk_score = float(risk_answer["score"])
+                        completed_confidence = completed_answer.get("confidence")
+                        risk_confidence = risk_answer.get("confidence")
+                        if completed_confidence is not None and float(completed_confidence) < min_confidence:
+                            out = result("assessment_uncertain")
+                            out["assessment"] = assessment
+                            return out
+                        if risk_confidence is not None and float(risk_confidence) < min_confidence:
+                            out = result("assessment_uncertain")
+                            out["assessment"] = assessment
+                            return out
+                        if completed_score < min_confidence or risk_score >= 1.5:
+                            out = result("assessment_uncertain")
+                            out["assessment"] = assessment
+                            return out
+                    except JevProviderError as exc:
+                        return result("provider_error", error=exc.code)
+                    except (KeyError, TypeError, ValueError):
+                        return result("assessment_failed")
+                    out = result("verified")
+                    out["assessment"] = assessment
+                    return out
                 return result("verified")
 
             signature = (identity, choice)

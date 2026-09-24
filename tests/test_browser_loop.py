@@ -52,11 +52,22 @@ def test_action_table_uses_current_ref_and_explicit_value():
     ]
 
 
+def evaluator(**kwargs):
+    assert set(kwargs["questions"]) == {"completed", "risk"}
+    return {
+        "answers": {
+            "completed": {"type": "noul", "noul": 0.99, "confidence": 0.99},
+            "risk": {"type": "score", "score": 0.0, "confidence": 0.99},
+        }
+    }
+
+
 def test_browser_flow_observes_decides_executes_and_reobserves():
     bridge = FakeBridge()
     result = run_browser_flow(
         bridge,
         chooser=chooser,
+        evaluator=evaluator,
         goal="Continue until Done is visible",
         action_rules=[
             {"action": "click", "role": "button", "name": "Continue"}
@@ -107,3 +118,31 @@ def test_browser_flow_stops_if_page_changes_after_decision():
 
     assert result["status"] == "stale_observation"
     assert bridge.actions == []
+
+
+def test_browser_flow_fails_closed_when_final_assessment_is_uncertain():
+    bridge = FakeBridge()
+
+    def uncertain(**kwargs):
+        return {
+            "answers": {
+                "completed": {"type": "noul", "noul": 0.4, "confidence": 0.99},
+                "risk": {"type": "score", "score": 0.0, "confidence": 0.99},
+            }
+        }
+
+    result = run_browser_flow(
+        bridge,
+        chooser=chooser,
+        evaluator=uncertain,
+        goal="Continue until Done is visible",
+        action_rules=[
+            {"action": "click", "role": "button", "name": "Continue"}
+        ],
+        completion_text="Done",
+        max_steps=4,
+    )
+
+    assert result["status"] == "assessment_uncertain"
+    assert result["verified"] is False
+    assert result["assessment"]["answers"]["completed"]["noul"] == 0.4

@@ -310,6 +310,8 @@ def normalize_response(response: Any) -> dict[str, Any]:
             normalized[str(name)] = {
                 "type": "noul",
                 "noul": _field(answer, "noul"),
+                "confidence": _field(answer, "confidence"),
+                "probabilities": dict(_field(answer, "probabilities", {}) or {}),
             }
         else:
             raise JevProviderError(
