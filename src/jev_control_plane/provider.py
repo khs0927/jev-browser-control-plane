@@ -33,6 +33,7 @@ class ProviderStatus:
     endpoint: str
     client_id: str | None
     credential_required: bool
+    credential_configured: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -41,6 +42,7 @@ class ProviderStatus:
             "endpoint": self.endpoint,
             "client_id": self.client_id,
             "credential_required": self.credential_required,
+            "credential_configured": self.credential_configured,
         }
 
 
@@ -73,6 +75,7 @@ class ZenFreeProvider:
         model: str | None = None,
         client_id: str | None = None,
         user_agent: str | None = None,
+        api_key: str | None = None,
         timeout: float = 4.0,
     ) -> None:
         self.endpoint = (
@@ -89,6 +92,13 @@ class ZenFreeProvider:
             or os.environ.get("JEV_ZEN_USER_AGENT")
             or DEFAULT_USER_AGENT
         ).strip()
+        raw_key = (
+            api_key
+            if api_key is not None
+            else os.environ.get("OPENCODE_API_KEY")
+            or os.environ.get("JEV_ZEN_API_KEY")
+        )
+        self.api_key = raw_key.strip() if isinstance(raw_key, str) and raw_key.strip() else None
         self.timeout = timeout
         if not self.client_id:
             raise ValueError("JEV_ZEN_CLIENT_ID must not be empty")
@@ -102,6 +112,7 @@ class ZenFreeProvider:
             endpoint=self.endpoint,
             client_id=self.client_id,
             credential_required=False,
+            credential_configured=bool(self.api_key and self.api_key.lower() != "zen"),
         )
 
     def system_one(
@@ -122,15 +133,20 @@ class ZenFreeProvider:
             ensure_ascii=False,
             allow_nan=False,
         ).encode("utf-8")
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "user-agent": self.user_agent,
+            "x-opencode-client": self.client_id,
+        }
+        # Some Zen integrations use the sentinel value "zen" to select the
+        # no-credential free path. Never transmit that sentinel as a bearer token.
+        if self.api_key and self.api_key.lower() != "zen":
+            headers["authorization"] = f"Bearer {self.api_key}"
         request = Request(
             self.endpoint,
             data=payload,
-            headers={
-                "accept": "application/json",
-                "content-type": "application/json",
-                "user-agent": self.user_agent,
-                "x-opencode-client": self.client_id,
-            },
+            headers=headers,
             method="POST",
         )
         try:
@@ -195,6 +211,7 @@ class TypeSafeProvider:
             endpoint="https://api.typesafe.ai/v1/systemone",
             client_id=None,
             credential_required=True,
+            credential_configured=True,
         )
 
     @staticmethod
