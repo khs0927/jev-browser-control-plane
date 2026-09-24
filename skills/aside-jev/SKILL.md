@@ -10,8 +10,8 @@ When this MCP is available, treat Jev as the default decision layer for browser 
 1. For a browser task, observe the current page first.
 2. Build a finite candidate table from actions that are actually available and authorized on the current observation.
 3. Include an `abstain` path or allow the provider to add it.
-4. Call `jev_step` before choosing a browser action yourself.
-5. Execute only the exact `tool` and `arguments` returned by `jev_step` when `should_execute=true`.
+4. For a bounded multi-step task with exact allowed role/name/action rules and an explicit completion text, prefer `jev_browser_run`; it keeps observation → Jev → execution → fresh observation in one guarded loop.
+5. When the persistent loop is not suitable, call `jev_step` before choosing a browser action yourself and execute only its exact returned `tool` and `arguments` when `should_execute=true`.
 6. If the result is `abstain`, confidence is below policy, the provider errors, or the page changed after the observation, do not guess. Re-observe or hand control back to the main Aside model.
 7. Never let Jev invent free-form text, credentials, selectors, URLs, or tool arguments. Those must come from the user, the current page, or the main planner.
 8. After execution, observe again. Do not reuse element references or decisions from the prior page state.
