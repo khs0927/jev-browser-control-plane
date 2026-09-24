@@ -14,6 +14,8 @@ from .candidates import (
     validate_confidence,
 )
 from .provider import normalize_response, provider_from_env
+from .bridge import BrowserBridge
+from .browser_loop import run_browser_flow
 
 mcp = FastMCP(
     "jev-control-plane",
@@ -189,6 +191,38 @@ async def jev_step(
         history=history,
         model=model,
         timeout_s=timeout_s,
+        min_confidence=min_confidence,
+    )
+
+
+@mcp.tool(name="jev_browser_run")
+async def jev_browser_run(
+    goal: str,
+    action_rules: list[dict[str, Any]],
+    completion_text: str,
+    scope: str | None = None,
+    max_steps: int = 12,
+    total_timeout_s: float = 90.0,
+    min_confidence: float = 0.70,
+) -> dict[str, Any]:
+    """Run snapshot -> Jev -> execute -> fresh snapshot over the existing bridge.
+
+    Each action rule must name an exact visible role/name/action. fill/type rules
+    require an explicit value supplied by the caller. Only browser_click and
+    browser_type are emitted in V1, and no automatic model/provider fallback is
+    performed.
+    """
+    bridge = BrowserBridge()
+    return await asyncio.to_thread(
+        run_browser_flow,
+        bridge,
+        chooser=_choose,
+        goal=goal,
+        action_rules=action_rules,
+        completion_text=completion_text,
+        scope=scope,
+        max_steps=max_steps,
+        total_timeout_s=total_timeout_s,
         min_confidence=min_confidence,
     )
 
