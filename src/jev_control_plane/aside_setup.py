@@ -72,12 +72,11 @@ def managed_instruction_block() -> str:
 
 
 def managed_skill() -> str:
-    return f"""{SKILL_MARKER}
----
+    return f"""---
 name: "aside-jev"
 description: "Automatically use Jev System One as the bounded decision layer for Aside browser actions."
 ---
-
+{SKILL_MARKER}
 # Aside Jev
 
 For browser work, observe first and build a finite table of actions that are visible and already authorized. Call `jev_step` before choosing an action yourself.
@@ -141,7 +140,10 @@ def _merge_agents(original: str) -> str:
 
 
 def _check_skill(original: str | None) -> None:
-    if original is not None and not original.startswith(SKILL_MARKER):
+    if original is None:
+        return
+    header = original.splitlines()[:8]
+    if SKILL_MARKER not in header:
         raise AsideSetupError(
             "Existing aside-jev skill is not managed by this project; refusing to overwrite it"
         )
