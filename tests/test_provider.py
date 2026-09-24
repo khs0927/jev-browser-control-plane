@@ -1,0 +1,84 @@
+import io
+import json
+from urllib.error import HTTPError
+
+import pytest
+
+from jev_control_plane.provider import JevProviderError, ZenFreeProvider
+
+
+class FakeResponse:
+    def __init__(self, body):
+        self._body = json.dumps(body).encode()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def read(self):
+        return self._body
+
+
+def test_zen_free_uses_system_one_and_own_client_id(monkeypatch):
+    seen = {}
+
+    def fake_urlopen(request, timeout):
+        seen["url"] = request.full_url
+        seen["headers"] = {key.lower(): value for key, value in request.header_items()}
+        seen["body"] = json.loads(request.data.decode())
+        seen["timeout"] = timeout
+        return FakeResponse(
+            {
+                "model": "jev-1.13-free",
+                "answers": {"route": {"choice": "a", "confidence": 1.0}},
+            }
+        )
+
+    monkeypatch.setattr("jev_control_plane.provider.urlopen", fake_urlopen)
+    provider = ZenFreeProvider(client_id="our-client", timeout=3.0)
+    result = provider.system_one(
+        state={"request": "x"},
+        questions={
+            "route": {
+                "type": "choice",
+                "instructions": "Pick one",
+                "criteria": {"a": "A", "b": "B"},
+            }
+        },
+    )
+
+    assert seen["url"] == "https://opencode.ai/zen/v1/systemone"
+    assert seen["headers"]["x-opencode-client"] == "our-client"
+    assert "authorization" not in seen["headers"]
+    assert seen["body"]["model"] == "jev-1.13-free"
+    assert result["answers"]["route"]["choice"] == "a"
+
+
+def test_zen_free_fails_closed_on_403(monkeypatch):
+    def fake_urlopen(request, timeout):
+        raise HTTPError(
+            request.full_url,
+            403,
+            "Forbidden",
+            {},
+            io.BytesIO(b'{"error":"not allowed"}'),
+        )
+
+    monkeypatch.setattr("jev_control_plane.provider.urlopen", fake_urlopen)
+    provider = ZenFreeProvider(client_id="our-client")
+
+    with pytest.raises(JevProviderError) as error:
+        provider.system_one(
+            state="x",
+            questions={
+                "done": {
+                    "type": "noul",
+                    "instructions": "Is this done?",
+                }
+            },
+        )
+
+    assert error.value.code == "authentication"
+    assert error.value.status == 403
