@@ -26,4 +26,16 @@ Used as a reference for batching multiple bounded Jev questions into one System 
 
 Source: https://github.com/Ying-Kai-Liao/jev-browser
 
+## bastani-inc/atomic
+
+Reviewed as a second independent example of treating OpenCode Zen Jev as a structured-decision provider rather than an OpenAI-style chat proxy. Its recent provider work reinforces the protocol boundary used here.
+
+Source: https://github.com/bastani-inc/atomic
+
+## ismaelsoilet/jev-harness
+
+Reviewed for its multi-provider System One transport, OpenCode Zen endpoint/model defaults, and project-identifying User-Agent pattern. It is not a core V1 dependency because its optional simulation/fail-open behavior conflicts with this project's fail-closed provider policy.
+
+Source: https://github.com/ismaelsoilet/jev-harness
+
 No upstream repository is vendored wholesale in V1. Keep upstream notices and license requirements if future changes copy substantial source.
