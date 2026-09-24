@@ -80,7 +80,7 @@ description: "Automatically use Jev System One as the bounded decision layer for
 {SKILL_MARKER}
 # Aside Jev
 
-For browser work, observe first and build a finite table of actions that are visible and already authorized. Call `jev_step` before choosing an action yourself.
+For browser work, observe first and use only actions that are visible and already authorized. Prefer `jev_browser_run` for bounded multi-step work when exact role/name/action rules and explicit completion text are available. Otherwise call `jev_step` before choosing an action yourself.
 
 Execute only the exact `tool` and `arguments` returned when `should_execute=true`. If Jev abstains, confidence is low, the provider fails, or the page changed, do not guess: re-observe or return control to the main planner.
 
