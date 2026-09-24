@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "jev-control-plane": {
+      "enabled": true,
+      "transport": "stdio",
+      "command": "jevctl-mcp",
+      "args": [],
+      "env": {
+        "JEV_PROVIDER": "zen-free",
+        "JEV_ZEN_CLIENT_ID": "jev-browser-control-plane"
+      }
+    }
+  }
+}
