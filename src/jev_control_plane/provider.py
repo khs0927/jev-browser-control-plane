@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 ZEN_JEV_API_URL = "https://opencode.ai/zen/v1/systemone"
 ZEN_JEV_MODEL = "jev-1.13-free"
 DEFAULT_CLIENT_ID = "jev-browser-control-plane"
+DEFAULT_USER_AGENT = "JevBrowserControlPlane/0.2.0 (+https://github.com/khs0927/jev-browser-control-plane)"
 
 
 class JevProviderError(RuntimeError):
@@ -71,6 +72,7 @@ class ZenFreeProvider:
         endpoint: str | None = None,
         model: str | None = None,
         client_id: str | None = None,
+        user_agent: str | None = None,
         timeout: float = 4.0,
     ) -> None:
         self.endpoint = (
@@ -82,9 +84,16 @@ class ZenFreeProvider:
             or os.environ.get("JEV_ZEN_CLIENT_ID")
             or DEFAULT_CLIENT_ID
         ).strip()
+        self.user_agent = (
+            user_agent
+            or os.environ.get("JEV_ZEN_USER_AGENT")
+            or DEFAULT_USER_AGENT
+        ).strip()
         self.timeout = timeout
         if not self.client_id:
             raise ValueError("JEV_ZEN_CLIENT_ID must not be empty")
+        if not self.user_agent:
+            raise ValueError("JEV_ZEN_USER_AGENT must not be empty")
 
     def status(self) -> ProviderStatus:
         return ProviderStatus(
@@ -119,6 +128,7 @@ class ZenFreeProvider:
             headers={
                 "accept": "application/json",
                 "content-type": "application/json",
+                "user-agent": self.user_agent,
                 "x-opencode-client": self.client_id,
             },
             method="POST",
