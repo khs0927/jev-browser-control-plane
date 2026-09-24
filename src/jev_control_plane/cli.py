@@ -15,6 +15,10 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("bridge-health")
     commands.add_parser("bridge-tools")
 
+    aside = commands.add_parser("aside-setup")
+    aside.add_argument("--profile", required=True, help="Aside accountRoot directory")
+    aside.add_argument("--apply", action="store_true", help="Apply after previewing the account-scoped changes")
+
     route = commands.add_parser("route")
     route.add_argument("--state", required=True, help="JSON state")
     route.add_argument("--instructions", required=True)
@@ -31,6 +35,18 @@ def main() -> int:
 
     if args.command == "bridge-tools":
         print(json.dumps(BrowserBridge().tools(), indent=2, ensure_ascii=False))
+        return 0
+
+    if args.command == "aside-setup":
+        from .aside_setup import apply as apply_aside
+        from .aside_setup import plan as plan_aside
+
+        if args.apply:
+            output = apply_aside(args.profile)
+        else:
+            output = plan_aside(args.profile)[0].to_dict()
+            output["applied"] = False
+        print(json.dumps(output, indent=2, ensure_ascii=False))
         return 0
 
     if args.command == "route":
