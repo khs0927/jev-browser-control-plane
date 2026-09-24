@@ -46,7 +46,27 @@ The MCP exposes:
 - `jev_choose`: choose one caller-owned candidate, without execution.
 - `jev_step`: choose + validate + confidence gate + return the original execution payload.
 
-Use `skills/aside-jev/SKILL.md` as the Aside task instruction. It makes Jev the default bounded browser decision layer while leaving observation and execution to Aside.
+### Account-scoped automatic registration
+
+The setup command follows the same account-scoped pattern used by current Aside/Jev integrations: it only merges one MCP server entry and manages the selected account's `AGENTS.md` block and `skills/user/aside-jev/SKILL.md`.
+
+Preview first:
+
+```bash
+jevctl aside-setup --profile "/absolute/path/to/Aside/accountRoot"
+```
+
+Apply explicitly with Aside closed:
+
+```bash
+jevctl aside-setup --profile "/absolute/path/to/Aside/accountRoot" --apply
+```
+
+It preserves unrelated settings/MCP entries, backs up changed existing files, and refuses to overwrite an unrelated `jev-control-plane` MCP entry or an unowned `aside-jev` skill. Reopen Aside and start a **new task** after applying.
+
+This makes Jev automatic through account instructions + MCP when those instructions are active. It is not a runtime hook that can technically intercept every built-in Aside browser action.
+
+Use `skills/aside-jev/SKILL.md` as the repository copy of the task instruction.
 
 ## Safety contract
 
