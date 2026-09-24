@@ -21,6 +21,14 @@ export JEV_PROVIDER=zen-free
 export JEV_ZEN_CLIENT_ID=jev-browser-control-plane
 ```
 
+If the user already has an OpenCode Zen key, the same free-model transport can authenticate without changing providers:
+
+```bash
+export OPENCODE_API_KEY=...
+```
+
+The key is optional for the approved/no-key free path and is never written into Aside `settings.json` by the installer. A configured key stays in the process environment/secret manager.
+
 To explicitly use a TypeSafe account instead:
 
 ```bash
@@ -45,6 +53,7 @@ The MCP exposes:
 - `jev_system_one`: raw Choice/Score/Noul request.
 - `jev_choose`: choose one caller-owned candidate, without execution.
 - `jev_step`: choose + validate + confidence gate + return the original execution payload.
+- `jev_browser_run`: persistent snapshot → Jev → guarded execution → fresh snapshot loop over the existing secure browser bridge.
 
 ### Account-scoped automatic registration
 
