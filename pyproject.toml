@@ -4,12 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jev-browser-control-plane"
-version = "0.1.0"
-description = "Thin control plane around official TypeSafe Jev and open-source browser runtimes."
+version = "0.2.0"
+description = "Thin Jev control plane for Aside and existing browser runtimes."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
-dependencies = ["typesafe-sdk==0.7.1"]
+dependencies = [
+  "mcp>=1.0,<2",
+  "typesafe-sdk==0.7.1",
+]
 
 [project.optional-dependencies]
 browser = ["browser-harness==0.1.13"]
@@ -17,6 +20,7 @@ dev = ["pytest>=9,<10"]
 
 [project.scripts]
 jevctl = "jev_control_plane.cli:main"
+jevctl-mcp = "jev_control_plane.aside_mcp:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
