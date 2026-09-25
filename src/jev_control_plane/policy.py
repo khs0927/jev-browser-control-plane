@@ -27,3 +27,18 @@ class DecisionPolicy:
         if decision.confidence >= self.planner_confidence:
             return Disposition.PLANNER
         return Disposition.REOBSERVE
+
+
+def disposition_for_noul(policy: DecisionPolicy, noul: float) -> Disposition:
+    """Map a noul probability onto a disposition.
+
+    ``NoulDecision`` carries no ``confidence`` field, because the probability that
+    a statement is true is not the same quantity as a choice confidence. Use this
+    instead of passing a noul result to :meth:`DecisionPolicy.disposition`, which
+    would raise. The bands are the same numbers, applied explicitly.
+    """
+    if noul >= policy.auto_confidence:
+        return Disposition.EXECUTE
+    if noul >= policy.planner_confidence:
+        return Disposition.PLANNER
+    return Disposition.REOBSERVE

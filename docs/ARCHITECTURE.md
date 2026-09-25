@@ -22,6 +22,22 @@ The already deployed browser bridge is kept as a separate transport for the Wind
 - Browser Use: larger fallback agent for surfaces that the ultrafast MVP does not cover well.
 - MCP routing: use Jev to shortlist tools before a planner sees them.
 
+## Decision primitives
+
+Official Jev is reachable through `JevRouter` and covers the three System One question types.
+
+| Question | Method | Answer |
+| --- | --- | --- |
+| `choice` | `JevRouter.choose` | one label, its confidence, and the label probabilities |
+| `noul` | `JevRouter.noul` | the probability that one statement is true |
+| `score` | `JevRouter.score` | a position on an ordered rubric, with the rubric and its distribution |
+
+Use a bounded decision only where the result is one of those three shapes. Exact arithmetic, lookups, dates, permissions, and every side effect stay in code.
+
+## Browser handoff
+
+A Jev decision never authorizes a browser action. When a decision informs browser work, record it with `create_checkpoint(...)`, keep the existing tab, reattach to it, take a fresh snapshot, and then call `assert_resume_allowed(...)`. The checkpoint is a frozen dataclass whose `requires_fresh_snapshot` and `browser_action_authorized` fields cannot be set at construction, so no caller can manufacture an authorized action. See `JEV_DECISION.md`.
+
 ## Code ownership rule
 
 Before adding project code, check whether the behavior already exists upstream. Prefer dependency, adapter, or configuration over a fork. Fork only for a bug fix that cannot be upstreamed immediately.
