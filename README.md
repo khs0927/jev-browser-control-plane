@@ -43,6 +43,11 @@ python -m compileall -q src tests scripts
 
 Workflow skills live in `skills/`, one `SKILL.md` per directory. `skills/README.md` lists them and records their provenance. `scripts/validate_skills.py` checks the front matter, the confirmation guidance, and that no vocabulary from the ported source project has crept back in.
 
+See `docs/PROJECT_MEMORY.md` before changing the transport, the test setup, or
+anything that depends on the SDK running. It records why this repository is not
+ASIDE-GPT, why Zen Free is not used, and why a green local run inside an agent
+sandbox is not evidence that the SDK works.
+
 ## Verifying the Jev path
 
 ```bash
