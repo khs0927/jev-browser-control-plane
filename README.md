@@ -37,6 +37,8 @@ PYTHONPATH=src python scripts/validate_skills.py
 python -m compileall -q src tests scripts
 ```
 
+`scripts/check.sh` covers the same ground. To verify the Jev layer against the real SDK, use `scripts/verify_jev.sh` instead, which builds its own venv.
+
 ## Skills
 
 Workflow skills live in `skills/`, one `SKILL.md` per directory. `skills/README.md` lists them and records their provenance. `scripts/validate_skills.py` checks the front matter, the confirmation guidance, and that no vocabulary from the ported source project has crept back in.
@@ -44,8 +46,10 @@ Workflow skills live in `skills/`, one `SKILL.md` per directory. `skills/README.
 ## Verifying the Jev path
 
 ```bash
-PYTHONPATH=src python -m pytest -q                      # includes tests/test_sdk_contract.py
-TYPESAFE_API_KEY=... PYTHONPATH=src python scripts/jev_smoke.py
+./scripts/verify_jev.sh                        # SDK contract tests, offline
+TYPESAFE_API_KEY=... ./scripts/verify_jev.sh    # plus the live smoke test
 ```
+
+`verify_jev.sh` builds a local venv, installs the project with its dev extras (which pins `typesafe-sdk`), and runs everything. It exists because a restricted agent sandbox cannot load `pydantic_core`, the SDK's native dependency, so these checks have to run from a normal terminal.
 
 `tests/test_sdk_contract.py` asserts the router's question objects and answer parsing against the installed SDK, and skips when the SDK is not importable. `scripts/jev_smoke.py` runs one live question of each type; it is read-only and needs a TypeSafe account key in the environment.
