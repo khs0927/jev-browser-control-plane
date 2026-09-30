@@ -95,3 +95,12 @@ def test_owner_oauth_token_contract(monkeypatch, override):
     result = asyncio.run(verifier.verify_token(jwt.encode(claims, key, algorithm='RS256')))
     assert (result is not None) == (not override)
     assert asyncio.run(verifier.verify_token('invalid-token')) is None
+
+
+def test_hosted_health_without_oauth_still_blocks_mcp(monkeypatch):
+    from starlette.testclient import TestClient
+    import hosted
+    monkeypatch.delenv('JEV_OAUTH_ISSUER', raising=False)
+    with TestClient(hosted.app()) as client:
+        assert client.get('/health').json() == {'status':'running', 'mcp_ready':False}
+        assert client.post('/mcp', json={'jsonrpc':'2.0','method':'initialize','id':1}).status_code == 503
