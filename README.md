@@ -58,3 +58,7 @@ TYPESAFE_API_KEY=... ./scripts/verify_jev.sh    # plus the live smoke test
 `verify_jev.sh` builds a local venv, installs the project with its dev extras (which pins `typesafe-sdk`), and runs everything. It exists because a restricted agent sandbox cannot load `pydantic_core`, the SDK's native dependency, so these checks have to run from a normal terminal.
 
 `tests/test_sdk_contract.py` asserts the router's question objects and answer parsing against the installed SDK, and skips when the SDK is not importable. `scripts/jev_smoke.py` runs one live question of each type; it is read-only and needs a TypeSafe account key in the environment.
+
+## Claude Code connection (MCP)
+
+`.mcp.json` registers a `jev` MCP server (`mcp/jev_mcp_server.mjs`, seven tools: `jev_decide`, `jev_noul`, `jev_verify`, `jev_screen`, `jev_classify`, `jev_rerank`, `jev_tool_route`). It talks only to the official TypeSafe endpoint and reads the key from `JEV_API_KEY` or `TYPESAFE_API_KEY` in the environment; the key is never stored in the repository. Without a key every call returns an error rather than falling back to another endpoint. Adapted from `khs0927/antigravity-jev-systemone` with the OpenCode Zen path removed.
