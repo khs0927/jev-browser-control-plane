@@ -61,7 +61,7 @@ def decision(kind: str, state: Any, instructions: str, criteria: Any = None):
 
 annotations = ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=True)
 
-def create_mcp(*, token_verifier=None, auth=None):
+def create_mcp(*, token_verifier=None, auth=None, instance=None):
     resource = urlparse(os.getenv("JEV_RESOURCE_URL", ""))
     allowed_hosts = ["localhost:*", "127.0.0.1:*"]
     if resource.netloc:
@@ -69,7 +69,7 @@ def create_mcp(*, token_verifier=None, auth=None):
     security = TransportSecuritySettings(
         enable_dns_rebinding_protection=True, allowed_hosts=allowed_hosts,
         allowed_origins=["https://chatgpt.com"] + ([f"{resource.scheme}://{resource.netloc}"] if resource.netloc else []))
-    mcp = FastMCP("JEV Decision Plugin", stateless_http=True, json_response=True,
+    mcp = instance if instance is not None else FastMCP("JEV Decision Plugin", stateless_http=True, json_response=True,
                   transport_security=security,
                   token_verifier=token_verifier, auth=auth,
                   host=os.getenv("JEV_BIND_HOST", "127.0.0.1"),

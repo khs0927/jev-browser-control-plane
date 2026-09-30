@@ -1,9 +1,9 @@
-# Connection status — 0.1.2
+# Connection status — 0.1.3
 
-Private plugin installed; MCP remains unconnected.
+Manufact and personal GitHub connection verified. Server cf89d2e8-74af-46e7-a0dc-926d8e1523fc created from feat/jev-decision-private-plugin, root plugin/jev-decision-plugin. Assigned MCP URL: https://bold-forge-l9kqr.run.mcp-use.com/mcp (not yet a verified usable MCP endpoint).
 
-Completed: official TypeSafe SDK API smoke test in an earlier run (Noul/Choice/Score). Container packaging, explicit inference enablement, DNS rebinding protection and owner-specific OAuth token verification are prepared. 16 offline tests passed; these are not live OAuth or deployment verification.
+TypeSafe key registered in sensitive production environment variable; no key embedded in plugin. Inference remains disabled until owner authentication is verified.
 
-Blocked: Manufact account API returned HTTP 401 Unauthorized. No authenticated hosting account, deployed HTTPS endpoint, OAuth issuer/client configuration or mobile end-to-end verification is available. Generic remote connector is not retried. Deployment through an authenticated supported hosting account remains within the requested task.
+First deployment built but failed because OAuth settings were absent. Hosted health entry point and explicit startup command are prepared. GitHub OAuth implementation reuses FastMCP 3.4.7; only GitHub subject 130247531 is accepted. Offline suite: 21 passed. Live OAuth and mobile verification remain pending. mcp.json stays empty until owner-authorized MCP calls are verified.
 
-API keys belong in the hosting secret store. No key is embedded in this plugin. Official provider inference is metered; free entitlement and account billing are not verified. mcp.json remains empty until a real authenticated endpoint is validated.
+Required remaining credentials: JEV_GITHUB_CLIENT_ID and sensitive JEV_GITHUB_CLIENT_SECRET. No generic remote connector is retried.

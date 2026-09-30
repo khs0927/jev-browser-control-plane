@@ -4,7 +4,6 @@ import uvicorn
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.routing import Route
-from server import http_server
 
 
 def app():
@@ -13,6 +12,10 @@ def app():
     async def blocked(request):
         return JSONResponse({'error':'oauth_not_configured'}, status_code=503)
     try:
+        if os.getenv('JEV_AUTH_PROVIDER') == 'github':
+            from github_auth import github_app
+            return github_app()
+        from server import http_server
         mcp = http_server()
     except RuntimeError:
         return Starlette(routes=[Route('/health', health), Route('/{path:path}', blocked, methods=['GET','POST','DELETE'])])

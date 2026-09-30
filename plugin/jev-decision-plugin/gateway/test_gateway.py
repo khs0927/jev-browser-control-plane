@@ -104,3 +104,27 @@ def test_hosted_health_without_oauth_still_blocks_mcp(monkeypatch):
     with TestClient(hosted.app()) as client:
         assert client.get('/health').json() == {'status':'running', 'mcp_ready':False}
         assert client.post('/mcp', json={'jsonrpc':'2.0','method':'initialize','id':1}).status_code == 503
+
+
+@pytest.mark.parametrize('subject,accepted', [('130247531',True),('other',False),('',False)])
+def test_github_owner_gate(monkeypatch,subject,accepted):
+    from github_auth import OwnerGitHubProvider
+    from fastmcp.server.auth.providers.github import GitHubProvider
+    async def fixture(self, token):
+        return SimpleNamespace(claims={'sub':subject})
+    monkeypatch.setattr(GitHubProvider,'load_access_token',fixture)
+    provider=object.__new__(OwnerGitHubProvider)
+    assert (asyncio.run(provider.load_access_token('fixture')) is not None) == accepted
+
+
+def test_github_oauth_metadata_and_unauthenticated_block(monkeypatch,tmp_path):
+    from starlette.testclient import TestClient
+    from github_auth import github_app
+    monkeypatch.setenv('JEV_GITHUB_CLIENT_ID','offline-fixture-id')
+    monkeypatch.setenv('JEV_GITHUB_CLIENT_SECRET','offline-fixture-secret')
+    monkeypatch.setenv('JEV_RESOURCE_URL','https://jev.test/mcp')
+    monkeypatch.setenv('FASTMCP_HOME',str(tmp_path))
+    with TestClient(github_app(),base_url='https://jev.test') as client:
+        assert client.get('/health').json()['mcp_ready'] is True
+        assert client.get('/.well-known/oauth-authorization-server').status_code == 200
+        assert client.post('/mcp',json={'jsonrpc':'2.0','method':'initialize','id':1}).status_code == 401

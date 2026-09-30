@@ -1,3 +1,5 @@
 typesafe-sdk==0.7.1
 mcp==1.30.0
 PyJWT[crypto]==2.15.1
+
+fastmcp==3.4.7
