@@ -141,3 +141,26 @@ def test_github_oauth_metadata_and_unauthenticated_block(monkeypatch,tmp_path):
                 'grant_types':['authorization_code','refresh_token'],
                 'response_types':['code']})
             assert response.status_code == expected
+
+def test_noul_validation_blocks_upstream(monkeypatch):
+    monkeypatch.setattr(server, "sdk_client", lambda: pytest.fail("upstream attempted"))
+    result = server.decision("noul", "Example", "Check", {"priority": "high"})
+    assert result["code"] == "VALIDATION_ERROR"
+    assert result["upstream_called"] is False
+    assert '"true" and "false"' in result["reason"]
+
+def test_noul_schema_and_mcp_validation():
+    async def run():
+        mcp = server.create_mcp()
+        listing = await mcp.list_tools()
+        tool = next(t for t in listing if t.name == "jev_noul")
+        schema = tool.inputSchema["$defs"]["NoulCriteria"]
+        assert set(schema["required"]) == {"true", "false"}
+        assert schema["additionalProperties"] is False
+        from mcp.server.fastmcp.exceptions import ToolError
+        with pytest.raises(ToolError, match="criteria.priority"):
+            await mcp.call_tool("jev_noul", {"state":"Example", "instructions":"Check", "criteria":{"priority":"high"}})
+        result = await mcp.call_tool("jev_batch", {"state":"Example", "questions":{"check":{"type":"noul","instructions":"Check","criteria":{"priority":"high"}}}})
+        assert result[1]["code"] == "VALIDATION_ERROR"
+        assert result[1]["field"] == "questions.check.criteria"
+    asyncio.run(run())
