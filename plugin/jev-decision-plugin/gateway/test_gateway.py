@@ -28,8 +28,8 @@ def test_invalid_questions(spec):
     with pytest.raises(ValueError):
         server.question(spec)
 
-def test_cost_gate_never_constructs_client(monkeypatch):
-    monkeypatch.delenv("JEV_NO_COST_ACCESS_VERIFIED", raising=False)
+def test_disabled_inference_never_constructs_client(monkeypatch):
+    monkeypatch.delenv("JEV_INFERENCE_ENABLED", raising=False)
     monkeypatch.setattr(server, "sdk_client", lambda: pytest.fail("upstream attempted"))
     assert server.decision("noul", "Example", "Check")["upstream_called"] is False
 
@@ -57,7 +57,7 @@ def test_actual_stdio_mcp_offline():
     async def run():
         env = dict(os.environ)
         env.pop("TYPESAFE_API_KEY", None)
-        env.pop("JEV_NO_COST_ACCESS_VERIFIED", None)
+        env.pop("JEV_INFERENCE_ENABLED", None)
         params = StdioServerParameters(command=sys.executable, args=[str(Path(server.__file__).resolve())], env=env)
         async with stdio_client(params) as (read, write):
             async with ClientSession(read, write) as client:
@@ -77,3 +77,21 @@ def test_actual_stdio_mcp_offline():
                     assert not result.isError
                     assert result.structuredContent["upstream_called"] is False
     asyncio.run(run())
+
+@pytest.mark.parametrize('override', [{}, {'iss':'https://wrong.test'}, {'aud':'wrong'}, {'sub':'other'}, {'client_id':'other'}, {'scope':'other'}, {'exp':1}])
+def test_owner_oauth_token_contract(monkeypatch, override):
+    import time
+    import jwt
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    config = {'JEV_OAUTH_ISSUER':'https://issuer.test', 'JEV_OAUTH_JWKS_URL':'https://issuer.test/jwks', 'JEV_RESOURCE_URL':'https://jev.test/mcp', 'JEV_OWNER_SUBJECT':'owner', 'JEV_OAUTH_CLIENT_ID':'client'}
+    for name, value in config.items():
+        monkeypatch.setenv(name, value)
+    monkeypatch.setattr(jwt, 'PyJWKClient', lambda url: SimpleNamespace(get_signing_key_from_jwt=lambda token: SimpleNamespace(key=key.public_key())))
+    monkeypatch.setattr(server, 'create_mcp', lambda **kwargs: kwargs['token_verifier'])
+    verifier = server.http_server()
+    claims = {'iss':'https://issuer.test', 'aud':'https://jev.test/mcp', 'sub':'owner', 'client_id':'client', 'scope':'jev:decide', 'exp':int(time.time())+300}
+    claims.update(override)
+    result = asyncio.run(verifier.verify_token(jwt.encode(claims, key, algorithm='RS256')))
+    assert (result is not None) == (not override)
+    assert asyncio.run(verifier.verify_token('invalid-token')) is None
