@@ -1,9 +1,11 @@
-# Connection status — 0.1.3
+# Connection status — 0.1.4
 
-Manufact and personal GitHub connection verified. Server cf89d2e8-74af-46e7-a0dc-926d8e1523fc created from feat/jev-decision-private-plugin, root plugin/jev-decision-plugin. Assigned MCP URL: https://bold-forge-l9kqr.run.mcp-use.com/mcp (not yet a verified usable MCP endpoint).
+Production gateway running: https://bold-forge-l9kqr.run.mcp-use.com/mcp
+Manufact server: cf89d2e8-74af-46e7-a0dc-926d8e1523fc
+Verified runtime commit: c54ae517e3b606f4ca1c3429fad15e21dd767acb
 
-TypeSafe key registered in sensitive production environment variable; no key embedded in plugin. Inference remains disabled until owner authentication is verified.
+On 2026-10-01 (Asia/Seoul), Manufact confirmed owner OAuth authentication. Authenticated jev_status and jev_batch succeeded. The official TypeSafe model jev-1.13.0 returned all three typed judgments. Server-side credentials are sensitive environment variables; no key is included in this plugin. Inference is enabled and provider-metered.
 
-First deployment built but failed because OAuth settings were absent. Hosted health entry point and explicit startup command are prepared. GitHub OAuth implementation reuses FastMCP 3.4.7; only GitHub subject 130247531 is accepted. Offline suite: 21 passed. Live OAuth and mobile verification remain pending. mcp.json stays empty until owner-authorized MCP calls are verified.
+The plugin now declares the verified MCP URL. ChatGPT OAuth connection and mobile end-to-end use must be verified separately. Manufact consent does not authenticate ChatGPT. No generic remote connector was retried.
 
-Required remaining credentials: JEV_GITHUB_CLIENT_ID and sensitive JEV_GITHUB_CLIENT_SECRET. No generic remote connector is retried.
+OAuth storage currently resides inside the container; a replacement deployment may require reauthentication. Provider billing/free entitlement and calibration are not verified.

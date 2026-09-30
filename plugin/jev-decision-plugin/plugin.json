@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "jev-decision-plugin",
-  "version": "0.1.3",
-  "description": "Private structured Jev decision workflow and official-SDK gateway source. API smoke test passed; remote MCP remains unconnected.",
+  "version": "0.1.4",
+  "description": "Private JEV structured decision Skill with an OAuth-protected hosted MCP. Authenticated live Noul, Choice and Score batch verified.",
   "author": {
     "name": "최승호"
   },
@@ -10,8 +10,8 @@
     "com.openai": {
       "interface": {
         "displayName": "JEV Decision Plugin",
-        "shortDescription": "API tested · MCP offline",
-        "longDescription": "Private Skill for Noul, Choice, Score and shared-state batching. A real TypeSafe API smoke test passed. The remote MCP Gateway and OAuth connection are not configured, so ChatGPT cannot call Jev through this plugin yet.",
+        "shortDescription": "Live MCP tested · OAuth",
+        "longDescription": "Private Noul, Choice, Score and shared-state batch decisions through an owner-restricted GitHub OAuth MCP Gateway. Hosted TypeSafe jev-1.13.0 inference passed. Connect the MCP in ChatGPT before use; mobile operation remains unverified.",
         "developerName": "최승호",
         "category": "Productivity",
         "defaultPrompt": "JEV 판단 연결 상태를 확인하고, 연결된 경우에만 Noul·Choice·Score로 판단해줘."

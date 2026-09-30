@@ -1,0 +1,19 @@
+{
+  "interface": {
+    "displayName": "JEV Decision Plugin",
+    "shortDescription": "Live MCP tested · OAuth",
+    "longDescription": "Private Noul, Choice, Score and shared-state batch decisions through an owner-restricted GitHub OAuth MCP Gateway. Hosted TypeSafe jev-1.13.0 inference passed. Connect the MCP in ChatGPT before use; mobile operation remains unverified.",
+    "developerName": "최승호",
+    "category": "Productivity",
+    "defaultPrompt": "JEV 판단 연결 상태를 확인하고, 연결된 경우에만 Noul·Choice·Score로 판단해줘.",
+    "capabilities": []
+  },
+  "name": "jev-decision-plugin",
+  "version": "0.1.4",
+  "description": "Private JEV structured decision Skill with an OAuth-protected hosted MCP. Authenticated live Noul, Choice and Score batch verified.",
+  "author": {
+    "name": "최승호"
+  },
+  "keywords": [],
+  "skills": "./skills"
+}

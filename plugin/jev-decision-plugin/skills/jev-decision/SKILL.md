@@ -5,8 +5,9 @@ description: Prepare or request bounded Jev Noul, Choice, Score and shared-state
 
 # JEV Decision
 
-This release is UNCONNECTED. Gateway source is bundled, but no live MCP URL,
-OAuth connection or mobile operation is verified.
+This release includes a verified HTTPS MCP URL. Owner OAuth and live inference
+were tested through Manufact on 2026-10-01 (Asia/Seoul). ChatGPT must establish
+its own OAuth connection. Mobile operation is not yet verified.
 Never claim Jev ran, or fabricate answers. If no Jev MCP tools are available,
 state the connection is pending and prepare the request only.
 
@@ -36,5 +37,5 @@ On authentication/cost failures stop that stage and report it; do not switch
 providers, retry remote access, weaken OAuth or expose exception bodies.
 
 Provenance: `khs0927/jev-browser-control-plane` at
-`5023ee0d5ef097cd66b0bad1893876dc39c11e10`; official `typesafe-sdk==0.7.1`.
+`c54ae517e3b606f4ca1c3429fad15e21dd767acb`; official `typesafe-sdk==0.7.1`.
 Contract: https://docs.typesafe.ai/api and https://docs.typesafe.ai/models.
