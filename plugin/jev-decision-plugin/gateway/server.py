@@ -4,7 +4,7 @@ import asyncio
 import os
 from dataclasses import asdict
 from typing import Any, Annotated
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, WithJsonSchema
 from urllib.parse import urlparse
 
 from mcp.server.fastmcp import FastMCP
@@ -102,9 +102,9 @@ def create_mcp(*, token_verifier=None, auth=None, instance=None):
                 "billing": "provider-metered", "free_entitlement_verified": False}
 
     @mcp.tool(annotations=annotations)
-    def jev_noul(state: Any, instructions: str, criteria: Annotated[NoulCriteria | None, Field(description='Optional; omit or provide exactly {"true": ..., "false": ...}. Other keys such as priority are forbidden.')] = None) -> dict[str, Any]:
+    def jev_noul(state: Any, instructions: str, criteria: Annotated[dict | None, WithJsonSchema({"anyOf": [NoulCriteria.model_json_schema(), {"type": "null"}]}), Field(description='Optional; omit or provide exactly {"true": ..., "false": ...}. Other keys such as priority are forbidden.')] = None) -> dict[str, Any]:
         """Return a yes/no probability; Noul has no confidence field. Optional criteria must contain exactly true and false, or be omitted. May incur provider charges when enabled."""
-        return decision("noul", state, instructions, criteria.model_dump() if criteria is not None else None)
+        return decision("noul", state, instructions, criteria)
 
     @mcp.tool(annotations=annotations)
     def jev_choice(state: Any, instructions: str, criteria: dict) -> dict[str, Any]:
