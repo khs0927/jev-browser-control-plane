@@ -1,6 +1,10 @@
 #!/usr/bin/env node
-// jev_mcp_server.mjs — Stdio MCP server exposing Jev 1.3 to Claude Code through the official TypeSafe endpoint.
-// Adapted from khs0927/antigravity-jev-systemone; the OpenCode Zen free endpoint is removed (see docs/PROJECT_MEMORY.md).
+// jev_mcp_server.mjs — Stdio MCP server exposing Jev 1.3 Free (OpenCode Zen) to Claude Code.
+// Adapted from khs0927/antigravity-jev-systemone. Run it on the machine where OpenCode Zen is
+// reachable: it is the local bridge. Zen Free (anonymous) is tried first; the authenticated
+// TypeSafe endpoint is used only as a fallback when a key is set.
+//   JEV_ZEN_ENDPOINT  override the free endpoint (e.g. a local bridge URL)
+//   JEV_API_KEY / TYPESAFE_API_KEY  optional; enables the TypeSafe fallback
 // Implements full TypeSafe Jev System 1 open-source tool suite:
 // - jev_decide: general choice / score / noul bounded judgment
 // - jev_noul: single proposition calibrated truth probability (0.0 to 1.0)
@@ -12,6 +16,10 @@
 
 import readline from "node:readline";
 
+const FREE = {
+  endpoint: process.env.JEV_ZEN_ENDPOINT || "https://opencode.ai/zen/v1/systemone",
+  model: "jev-1.13-free",
+};
 const DIRECT = { endpoint: "https://api.typesafe.ai/v1/systemone", model: "jev-1.13.0" };
 
 function readKey() {
@@ -33,8 +41,16 @@ async function callJev(stateText, questions, timeoutMs = 30000) {
     return { status: res.status, ok: res.ok, body: await res.text() };
   }
 
-  if (!key) throw new Error("JEV_API_KEY (or TYPESAFE_API_KEY) is not set");
-  const attempt = await post(DIRECT, true);
+  let attempt;
+  try {
+    attempt = await post(FREE, false);
+  } catch (e) {
+    if (!key) throw e;
+    attempt = { ok: false, status: 0, body: String(e?.message || e) };
+  }
+  if (!attempt.ok && key) {
+    attempt = await post(DIRECT, true);
+  }
 
   if (!attempt.ok) {
     throw new Error(`Jev returned status ${attempt.status}: ${attempt.body}`);
@@ -74,7 +90,7 @@ function parseQuestions(spec, stateText) {
 const TOOLS = [
   {
     name: "jev_decide",
-    description: "Execute a System 1 bounded decision or probability assessment using Jev 1.3 via the official TypeSafe endpoint. Ideal for choice routing, safety classification, and risk scoring.",
+    description: "Execute a System 1 bounded decision or probability assessment using Jev 1.3 Free via OpenCode Zen. Ideal for choice routing, safety classification, and risk scoring.",
     inputSchema: {
       type: "object",
       properties: {
