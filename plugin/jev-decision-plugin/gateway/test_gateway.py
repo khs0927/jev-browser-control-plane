@@ -154,12 +154,12 @@ def test_noul_schema_and_mcp_validation():
         mcp = server.create_mcp()
         listing = await mcp.list_tools()
         tool = next(t for t in listing if t.name == "jev_noul")
-        schema = tool.inputSchema["$defs"]["NoulCriteria"]
+        schema = tool.inputSchema["properties"]["criteria"]["anyOf"][0]
         assert set(schema["required"]) == {"true", "false"}
         assert schema["additionalProperties"] is False
-        from mcp.server.fastmcp.exceptions import ToolError
-        with pytest.raises(ToolError, match="criteria.priority"):
-            await mcp.call_tool("jev_noul", {"state":"Example", "instructions":"Check", "criteria":{"priority":"high"}})
+        result = await mcp.call_tool("jev_noul", {"state":"Example", "instructions":"Check", "criteria":{"priority":"high"}})
+        assert result[1]["code"] == "VALIDATION_ERROR"
+        assert result[1]["upstream_called"] is False
         result = await mcp.call_tool("jev_batch", {"state":"Example", "questions":{"check":{"type":"noul","instructions":"Check","criteria":{"priority":"high"}}}})
         assert result[1]["code"] == "VALIDATION_ERROR"
         assert result[1]["field"] == "questions.check.criteria"
