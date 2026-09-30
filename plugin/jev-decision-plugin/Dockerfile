@@ -7,4 +7,4 @@ RUN useradd --uid 10001 --create-home jev
 COPY --chown=jev:jev gateway/ ./
 USER jev
 EXPOSE 8080
-CMD ["python", "server.py", "--http"]
+CMD ["python", "hosted.py"]
