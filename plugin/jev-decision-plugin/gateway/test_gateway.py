@@ -128,3 +128,16 @@ def test_github_oauth_metadata_and_unauthenticated_block(monkeypatch,tmp_path):
         assert client.get('/health').json()['mcp_ready'] is True
         assert client.get('/.well-known/oauth-authorization-server').status_code == 200
         assert client.post('/mcp',json={'jsonrpc':'2.0','method':'initialize','id':1}).status_code == 401
+        for uri, expected in [
+            ('https://manufact.com/inspector/oauth/callback',201),
+            ('https://chatgpt.com/connector/oauth/fixture',201),
+            ('https://untrusted.test/oauth/callback',400),
+            ('https://manufact.com/unapproved-callback',400),
+        ]:
+            response = client.post('/register', json={
+                'client_name':'Offline callback contract',
+                'redirect_uris':[uri],
+                'token_endpoint_auth_method':'none',
+                'grant_types':['authorization_code','refresh_token'],
+                'response_types':['code']})
+            assert response.status_code == expected

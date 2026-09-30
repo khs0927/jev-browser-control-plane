@@ -1,6 +1,6 @@
 # Private GitHub OAuth setup
 
-Upstream implementation: FastMCP 3.4.7 GitHubProvider. GitHub authentication requests only read:user, with consent enabled and ChatGPT connector callback URLs allowed. Access-token validation then requires immutable GitHub subject 130247531.
+Upstream implementation: FastMCP 3.4.7 GitHubProvider. GitHub authentication requests only read:user, with consent enabled and ChatGPT connector callback URLs and the exact Manufact Inspector callback (https://manufact.com/inspector/oauth/callback) allowed. Access-token validation then requires immutable GitHub subject 130247531.
 
 GitHub OAuth App:
 - Name: JEV Decision Gateway
