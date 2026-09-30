@@ -1,4 +1,4 @@
-"""Private Jev gateway. No inference until no-cost access is verified."""
+"""Private Jev gateway. Inference requires explicit enablement and server credentials."""
 from __future__ import annotations
 import asyncio
 import os
@@ -8,11 +8,12 @@ from urllib.parse import urlparse
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
+from mcp.server.transport_security import TransportSecuritySettings
 from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
 from reused_router import JevRouter
 
 def ready() -> bool:
-    return os.getenv("JEV_NO_COST_ACCESS_VERIFIED") == "true" and bool(os.getenv("TYPESAFE_API_KEY"))
+    return os.getenv("JEV_INFERENCE_ENABLED") == "true" and bool(os.getenv("TYPESAFE_API_KEY"))
 
 def question(spec: dict[str, Any]):
     if set(spec) - {"type", "instructions", "criteria"}:
@@ -43,7 +44,7 @@ def decision(kind: str, state: Any, instructions: str, criteria: Any = None):
     validate_state(state)
     question({"type": kind, "instructions": instructions, **({"criteria": criteria} if criteria is not None else {})})
     if not ready():
-        return {"status": "blocked", "reason": "No-cost access and server-side credential not verified", "upstream_called": False}
+        return {"status": "blocked", "reason": "Inference enablement and server-side credential not configured", "upstream_called": False}
     try:
         with sdk_client() as client:
             router = JevRouter(client=client)
@@ -61,15 +62,26 @@ def decision(kind: str, state: Any, instructions: str, criteria: Any = None):
 annotations = ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=True)
 
 def create_mcp(*, token_verifier=None, auth=None):
+    resource = urlparse(os.getenv("JEV_RESOURCE_URL", ""))
+    allowed_hosts = ["localhost:*", "127.0.0.1:*"]
+    if resource.netloc:
+        allowed_hosts.append(resource.netloc)
+    security = TransportSecuritySettings(
+        enable_dns_rebinding_protection=True, allowed_hosts=allowed_hosts,
+        allowed_origins=["https://chatgpt.com"] + ([f"{resource.scheme}://{resource.netloc}"] if resource.netloc else []))
     mcp = FastMCP("JEV Decision Plugin", stateless_http=True, json_response=True,
-                  token_verifier=token_verifier, auth=auth, host="127.0.0.1")
+                  transport_security=security,
+                  token_verifier=token_verifier, auth=auth,
+                  host=os.getenv("JEV_BIND_HOST", "127.0.0.1"),
+                  port=int(os.getenv("PORT", "8080")))
 
     @mcp.tool(annotations=annotations)
     def jev_status() -> dict[str, Any]:
         """Read configuration status without making an inference request."""
         return {"status": "configured" if ready() else "unconnected", "live_inference_verified": False,
-                "no_cost_access_verified": os.getenv("JEV_NO_COST_ACCESS_VERIFIED") == "true",
-                "threshold_status": "uncalibrated", "provider": "TypeSafe official SDK"}
+                "inference_enabled": os.getenv("JEV_INFERENCE_ENABLED") == "true",
+                "threshold_status": "uncalibrated", "provider": "TypeSafe official SDK", "model": "jev-1.13.0",
+                "billing": "provider-metered", "free_entitlement_verified": False}
 
     @mcp.tool(annotations=annotations)
     def jev_noul(state: Any, instructions: str, criteria: dict | None = None) -> dict[str, Any]:
@@ -94,7 +106,7 @@ def create_mcp(*, token_verifier=None, auth=None):
             raise ValueError("Gateway accepts 1 to 100 named questions")
         typed = {name: question(spec) for name, spec in questions.items()}
         if not ready():
-            return {"status": "blocked", "reason": "No-cost access and server-side credential not verified", "upstream_called": False}
+            return {"status": "blocked", "reason": "Inference enablement and server-side credential not configured", "upstream_called": False}
         try:
             with sdk_client() as client:
                 result = client.system_one(state=state, questions=typed)
@@ -136,7 +148,7 @@ def http_server():
                 return None
     return create_mcp(token_verifier=Verifier(), auth=AuthSettings(
         issuer_url=AnyHttpUrl(values["JEV_OAUTH_ISSUER"]), resource_server_url=AnyHttpUrl(values["JEV_RESOURCE_URL"]),
-        required_scopes=["jev:decide"]))
+        required_scopes=["jev:decide"], validate_token_resource=True))
 
 if __name__ == "__main__":
     import sys
