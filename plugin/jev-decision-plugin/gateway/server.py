@@ -3,7 +3,8 @@ from __future__ import annotations
 import asyncio
 import os
 from dataclasses import asdict
-from typing import Any
+from typing import Any, Annotated
+from pydantic import BaseModel, ConfigDict, Field
 from urllib.parse import urlparse
 
 from mcp.server.fastmcp import FastMCP
@@ -11,6 +12,17 @@ from mcp.types import ToolAnnotations
 from mcp.server.transport_security import TransportSecuritySettings
 from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
 from reused_router import JevRouter
+
+class NoulCriteria(BaseModel):
+    """Optional Noul criteria must contain exactly the JSON keys true and false."""
+    model_config = ConfigDict(extra="forbid")
+    true: Any = Field(description="Criterion for a true/yes outcome.")
+    false: Any = Field(description="Criterion for a false/no outcome.")
+
+def validation_error(message: str, field: str = "criteria"):
+    return {"status": "validation_error", "code": "VALIDATION_ERROR",
+            "field": field, "reason": message, "upstream_called": False,
+            "retry_automatically": False}
 
 def ready() -> bool:
     return os.getenv("JEV_INFERENCE_ENABLED") == "true" and bool(os.getenv("TYPESAFE_API_KEY"))
@@ -24,7 +36,7 @@ def question(spec: dict[str, Any]):
     kind, criteria = spec.get("type"), spec.get("criteria")
     if kind == "noul":
         if criteria is not None and (not isinstance(criteria, dict) or set(criteria) != {"true", "false"}):
-            raise ValueError("Noul criteria must define true and false")
+            raise ValueError('Noul criteria must contain exactly the keys "true" and "false"; omit criteria to use defaults. Example: {"true": "condition is met", "false": "condition is not met"}')
         return Noul(instructions=instructions, **({"criteria": criteria} if criteria is not None else {}))
     if kind == "choice" and isinstance(criteria, dict) and 2 <= len(criteria) <= 255:
         return Choice(instructions=instructions, criteria=criteria)
@@ -41,8 +53,14 @@ def validate_state(state: Any):
         raise ValueError("state must be nonempty text or structured JSON")
 
 def decision(kind: str, state: Any, instructions: str, criteria: Any = None):
-    validate_state(state)
-    question({"type": kind, "instructions": instructions, **({"criteria": criteria} if criteria is not None else {})})
+    try:
+        validate_state(state)
+    except ValueError as exc:
+        return validation_error(str(exc), "state")
+    try:
+        question({"type": kind, "instructions": instructions, **({"criteria": criteria} if criteria is not None else {})})
+    except ValueError as exc:
+        return validation_error(str(exc), "criteria")
     if not ready():
         return {"status": "blocked", "reason": "Inference enablement and server-side credential not configured", "upstream_called": False}
     try:
@@ -84,9 +102,9 @@ def create_mcp(*, token_verifier=None, auth=None, instance=None):
                 "billing": "provider-metered", "free_entitlement_verified": False}
 
     @mcp.tool(annotations=annotations)
-    def jev_noul(state: Any, instructions: str, criteria: dict | None = None) -> dict[str, Any]:
-        """Return a yes/no probability; Noul has no confidence field. May incur provider charges when enabled."""
-        return decision("noul", state, instructions, criteria)
+    def jev_noul(state: Any, instructions: str, criteria: Annotated[NoulCriteria | None, Field(description='Optional; omit or provide exactly {"true": ..., "false": ...}. Other keys such as priority are forbidden.')] = None) -> dict[str, Any]:
+        """Return a yes/no probability; Noul has no confidence field. Optional criteria must contain exactly true and false, or be omitted. May incur provider charges when enabled."""
+        return decision("noul", state, instructions, criteria.model_dump() if criteria is not None else None)
 
     @mcp.tool(annotations=annotations)
     def jev_choice(state: Any, instructions: str, criteria: dict) -> dict[str, Any]:
@@ -104,7 +122,12 @@ def create_mcp(*, token_verifier=None, auth=None, instance=None):
         validate_state(state)
         if not questions or len(questions) > 100:
             raise ValueError("Gateway accepts 1 to 100 named questions")
-        typed = {name: question(spec) for name, spec in questions.items()}
+        typed = {}
+        for name, spec in questions.items():
+            try:
+                typed[name] = question(spec)
+            except ValueError as exc:
+                return validation_error(str(exc), f"questions.{name}.criteria")
         if not ready():
             return {"status": "blocked", "reason": "Inference enablement and server-side credential not configured", "upstream_called": False}
         try:
