@@ -6,13 +6,15 @@ description: Prepare or request bounded Jev Noul, Choice, Score and shared-state
 # JEV Decision
 
 This release is UNCONNECTED. Gateway source is bundled, but no live MCP URL,
-OAuth connection, free inference entitlement or mobile operation is verified.
+OAuth connection or mobile operation is verified.
 Never claim Jev ran, or fabricate answers. If no Jev MCP tools are available,
 state the connection is pending and prepare the request only.
 
 When a verified connection is present:
-1. Call `jev_status` first. Stop inference if access is not configured or no-cost
-   access is unverified. Do not buy credits, subscribe or use paid fallback.
+1. Call `jev_status` first. Stop inference if access is not configured or inference
+   is not enabled. Official TypeSafe calls are provider-metered; respect a user
+   request for free-only use and never imply a free entitlement. No subscriptions
+   or alternate providers are authorized by this Skill.
 2. Supply minimal text or JSON state and atomic questions. JEV is a structured
    judgment tool, never a conversational model or tool executor.
 3. Use `jev_noul` for a yes/no statement's probability in [0,1]. It has NO
