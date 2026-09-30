@@ -12,6 +12,7 @@ Stub-based tests could not catch that, because the stub declared whatever the
 router expected.
 """
 
+import json
 from types import SimpleNamespace
 
 import pytest
@@ -136,14 +137,16 @@ def test_choice_answer_parses_confidence_and_probabilities():
 
 def test_score_answer_does_not_truncate_a_fractional_score():
     """The regression this file exists for."""
-    answer = ScoreAnswer.model_validate(
-        {
-            "type": "score",
-            "score": 1.5,
-            "confidence": 0.6,
-            "legend": {"0": "low", "1": "mid", "2": "high"},
-            "probabilities": {"0": 0.2, "1": 0.5, "2": 0.3},
-        }
+    answer = ScoreAnswer.model_validate_json(
+        json.dumps(
+            {
+                "type": "score",
+                "score": 1.5,
+                "confidence": 0.6,
+                "legend": {"0": "low", "1": "mid", "2": "high"},
+                "probabilities": {"0": 0.2, "1": 0.5, "2": 0.3},
+            }
+        )
     )
     client = CapturingClient({"s": answer})
     result = JevRouter(client=client).score(
@@ -159,14 +162,16 @@ def test_score_answer_does_not_truncate_a_fractional_score():
 
 
 def test_score_answer_serializes_non_string_legend_entries():
-    answer = ScoreAnswer.model_validate(
-        {
-            "type": "score",
-            "score": 0.0,
-            "confidence": 0.4,
-            "legend": {"0": {"label": "low", "detail": "no action"}},
-            "probabilities": {"0": 1.0},
-        }
+    answer = ScoreAnswer.model_validate_json(
+        json.dumps(
+            {
+                "type": "score",
+                "score": 0.0,
+                "confidence": 0.4,
+                "legend": {"0": {"label": "low", "detail": "no action"}},
+                "probabilities": {"0": 1.0},
+            }
+        )
     )
     client = CapturingClient({"s": answer})
     result = JevRouter(client=client).score(

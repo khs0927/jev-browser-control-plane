@@ -74,7 +74,7 @@ function parseQuestions(spec, stateText) {
 const TOOLS = [
   {
     name: "jev_decide",
-    description: "Execute a System 1 bounded decision or probability assessment using Jev 1.3 Free via OpenCode Zen. Ideal for choice routing, safety classification, and risk scoring.",
+    description: "Execute a System 1 bounded decision or probability assessment using Jev 1.3 via the official TypeSafe endpoint. Ideal for choice routing, safety classification, and risk scoring.",
     inputSchema: {
       type: "object",
       properties: {
