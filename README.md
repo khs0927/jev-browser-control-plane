@@ -58,3 +58,7 @@ TYPESAFE_API_KEY=... ./scripts/verify_jev.sh    # plus the live smoke test
 `verify_jev.sh` builds a local venv, installs the project with its dev extras (which pins `typesafe-sdk`), and runs everything. It exists because a restricted agent sandbox cannot load `pydantic_core`, the SDK's native dependency, so these checks have to run from a normal terminal.
 
 `tests/test_sdk_contract.py` asserts the router's question objects and answer parsing against the installed SDK, and skips when the SDK is not importable. `scripts/jev_smoke.py` runs one live question of each type; it is read-only and needs a TypeSafe account key in the environment.
+
+## Claude Code connection (MCP)
+
+`.mcp.json` registers a `jev` MCP server (`mcp/jev_mcp_server.mjs`, seven tools: `jev_decide`, `jev_noul`, `jev_verify`, `jev_screen`, `jev_classify`, `jev_rerank`, `jev_tool_route`). It is a local stdio bridge to **Jev 1.3 Free on OpenCode Zen** (`jev-1.13-free`, anonymous, no key). Zen Free only answers from where OpenCode Zen is reachable, so run Claude Code (and this server) on that machine; a cloud sandbox with a restricted egress list cannot reach it. If `JEV_API_KEY` or `TYPESAFE_API_KEY` is set, the server falls back to the authenticated TypeSafe endpoint when Zen Free fails. `JEV_ZEN_ENDPOINT` overrides the free endpoint, for example to point at another local bridge. Keys are read from the environment and never stored in the repository. Adapted from `khs0927/antigravity-jev-systemone`.

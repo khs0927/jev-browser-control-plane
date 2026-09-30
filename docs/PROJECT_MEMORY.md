@@ -24,7 +24,11 @@ about the other. Verify against this repository before acting.
 The only supported path is `typesafe-sdk` against the official TypeSafe endpoint,
 with a model available to the account and `TYPESAFE_API_KEY` from the environment.
 
-OpenCode Zen Free (`jev-1.13-free`) is **not used here**. It was considered in
+> Scope note: this section governs the Python control plane (`src/`, `JevRouter`).
+> The Claude Code MCP bridge in `mcp/` is a separate, owner-approved path that uses
+> Jev 1.3 Free on OpenCode Zen as a local bridge, with TypeSafe only as a keyed fallback.
+
+OpenCode Zen Free (`jev-1.13-free`) is **not used by the Python control plane**. It was considered in
 `feat/aside-jev-zen-free-provider` (PR #1) and rejected. The reasoning is recorded
 in `docs/JEV_DECISION.md` and in the PR #1 closure comment:
 
