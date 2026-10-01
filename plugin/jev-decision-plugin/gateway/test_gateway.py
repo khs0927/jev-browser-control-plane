@@ -164,3 +164,26 @@ def test_noul_schema_and_mcp_validation():
         assert result[1]["code"] == "VALIDATION_ERROR"
         assert result[1]["field"] == "questions.check.criteria"
     asyncio.run(run())
+
+def test_known_chatgpt_registration_recovers_after_restart(monkeypatch, tmp_path):
+    from github_auth import OwnerGitHubProvider, CHATGPT_CLIENT_ID, CHATGPT_CALLBACK
+    from pydantic import AnyUrl
+    def provider():
+        return OwnerGitHubProvider(
+            client_id="offline-upstream-id", client_secret="offline-upstream-secret",
+            base_url="https://jev.test", required_scopes=["read:user"],
+            allowed_client_redirect_uris=["https://chatgpt.com/connector/oauth/*"])
+    monkeypatch.setenv("FASTMCP_HOME", str(tmp_path))
+    async def run():
+        auth = provider()
+        client = await auth.get_client(CHATGPT_CLIENT_ID)
+        assert client.client_id == CHATGPT_CLIENT_ID
+        assert list(map(str, client.redirect_uris)) == [CHATGPT_CALLBACK]
+        assert client.token_endpoint_auth_method == "none"
+        assert str(client.validate_redirect_uri(AnyUrl(CHATGPT_CALLBACK))) == CHATGPT_CALLBACK
+        with pytest.raises(Exception):
+            client.validate_redirect_uri(AnyUrl("https://untrusted.test/callback"))
+        assert await auth.get_client("unknown-client") is None
+        # A new provider instance must also recognize the pinned public client.
+        assert (await provider().get_client(CHATGPT_CLIENT_ID)).client_id == CHATGPT_CLIENT_ID
+    asyncio.run(run())
