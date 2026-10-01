@@ -3,12 +3,33 @@ import os
 import logging
 from urllib.parse import urlparse
 from fastmcp import FastMCP
+from mcp.shared.auth import OAuthClientInformationFull
+from pydantic import AnyUrl
 from fastmcp.server.auth.providers.github import GitHubProvider
 from server import create_mcp
 
 OWNER_ID = '130247531'
 
+# Public OAuth metadata observed from this owner's existing ChatGPT connector.
+# Restore only this registration after an ephemeral deployment loses its disk.
+CHATGPT_CLIENT_ID = "fff52a72-eef8-4216-a1ca-8698912fd1a1"
+CHATGPT_CALLBACK = "https://chatgpt.com/connector/oauth/GDFZSoa7auNs"
+
 class OwnerGitHubProvider(GitHubProvider):
+    async def get_client(self, client_id):
+        client = await super().get_client(client_id)
+        if client is not None or client_id != CHATGPT_CLIENT_ID:
+            return client
+        await self.register_client(OAuthClientInformationFull(
+            client_id=CHATGPT_CLIENT_ID,
+            client_name="ChatGPT JEV Decision MCP",
+            redirect_uris=[AnyUrl(CHATGPT_CALLBACK)],
+            grant_types=["authorization_code", "refresh_token"],
+            response_types=["code"], scope="read:user",
+            token_endpoint_auth_method="none",
+        ))
+        return await super().get_client(client_id)
+
     async def register_client(self, client_info):
         try:
             return await super().register_client(client_info)
