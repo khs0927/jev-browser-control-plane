@@ -1,0 +1,34 @@
+[
+  {
+    "repository": "https://github.com/obra/superpowers.git",
+    "commit_sha": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+    "source_path": "skills/writing-plans/SKILL.md",
+    "source_sha256": "a6c67c1900064347c2a329990dd3c555657c51c3ec53b259a08aa01a2c26139a",
+    "adapted_path": "mobile-work-gateway/plugin/skills/development-planning/SKILL.md",
+    "modifications": "Condensed and translated host-specific execution rules into MCP boundary; no engine, hooks, or additional agents."
+  },
+  {
+    "repository": "https://github.com/mattpocock/skills.git",
+    "commit_sha": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
+    "source_path": "skills/engineering/code-review/SKILL.md",
+    "source_sha256": "47f4e52c21694def9c7c11cbfbf891ca35eac7a93e395797515be3c8a409ae50",
+    "adapted_path": "mobile-work-gateway/plugin/skills/engineering-review/SKILL.md",
+    "modifications": "Condensed and translated host-specific execution rules into MCP boundary; no engine, hooks, or additional agents."
+  },
+  {
+    "repository": "https://github.com/pbakaus/impeccable.git",
+    "commit_sha": "e103efe779e2dd01274dabae83531fef00bf2563",
+    "source_path": "plugin/skills/impeccable/SKILL.md",
+    "source_sha256": "a18a12b0fe210e1aae781df177eb9fda914767bd9e18f2575abd757905f42c76",
+    "adapted_path": "mobile-work-gateway/plugin/skills/design-review/SKILL.md",
+    "modifications": "Condensed and translated host-specific execution rules into MCP boundary; no engine, hooks, or additional agents."
+  },
+  {
+    "repository": "https://github.com/coreyhaines31/marketingskills.git",
+    "commit_sha": "dda3841f0b294e01e93b1541486beefbfab0915e",
+    "source_path": "skills/copywriting/SKILL.md",
+    "source_sha256": "78c0a09b78a41995ba055d6549bbd7db3fe958673d039b9121e7a2e32bb4bb06",
+    "adapted_path": "mobile-work-gateway/plugin/skills/marketing-review/SKILL.md",
+    "modifications": "Condensed and translated host-specific execution rules into MCP boundary; no engine, hooks, or additional agents."
+  }
+]

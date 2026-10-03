@@ -1,0 +1,24 @@
+{
+  "name": "mobile-work-gateway",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "build": "wrangler deploy --dry-run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.0",
+    "@cloudflare/workers-oauth-provider": "1.2.1",
+    "jose": "6.2.12",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "tsx": "4.20.6",
+    "wrangler": "4.147.0",
+    "@cloudflare/workers-types": "5.20261003.1",
+    "@types/node": "24.10.1"
+  }
+}

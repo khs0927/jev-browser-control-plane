@@ -141,8 +141,8 @@ def test_score_answer_does_not_truncate_a_fractional_score():
             "type": "score",
             "score": 1.5,
             "confidence": 0.6,
-            "legend": {"0": "low", "1": "mid", "2": "high"},
-            "probabilities": {"0": 0.2, "1": 0.5, "2": 0.3},
+            "legend": {0: "low", 1: "mid", 2: "high"},
+            "probabilities": {0: 0.2, 1: 0.5, 2: 0.3},
         }
     )
     client = CapturingClient({"s": answer})
@@ -164,8 +164,8 @@ def test_score_answer_serializes_non_string_legend_entries():
             "type": "score",
             "score": 0.0,
             "confidence": 0.4,
-            "legend": {"0": {"label": "low", "detail": "no action"}},
-            "probabilities": {"0": 1.0},
+            "legend": {0: {"label": "low", "detail": "no action"}},
+            "probabilities": {0: 1.0},
         }
     )
     client = CapturingClient({"s": answer})
