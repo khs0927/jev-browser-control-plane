@@ -1,0 +1,28 @@
+name: Mobile Work environment fixture
+on:
+  push:
+    branches: [feat/mobile-work-gateway]
+    paths:
+      - mobile-work-gateway/scripts/environment_check.py
+      - .github/workflows/mobile-work-environment.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  environment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Check runner Python and public JSON fixture
+        run: python3 mobile-work-gateway/scripts/environment_check.py
+      - name: Upload public results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: mobile-work-environment-results
+          path: mobile-work-results/
+          if-no-files-found: error
+          retention-days: 3
