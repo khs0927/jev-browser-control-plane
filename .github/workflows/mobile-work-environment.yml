@@ -1,17 +1,26 @@
 name: Mobile Work environment fixture
+run-name: 'mobile-work:${{ inputs.request_id || github.run_id }}'
 on:
   push:
     branches: [feat/mobile-work-gateway]
     paths:
-      - mobile-work-gateway/scripts/environment_check.py
+      - mobile-work-gateway/scripts/**
       - .github/workflows/mobile-work-environment.yml
   workflow_dispatch:
+    inputs:
+      request_id:
+        description: Gateway reservation UUID
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
   environment:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -26,3 +35,9 @@ jobs:
           path: mobile-work-results/
           if-no-files-found: error
           retention-days: 3
+      - name: Deliver owner-bound result
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          MWG_RESULT_ENDPOINT: ${{ vars.MWG_RESULT_ENDPOINT }}
+          MWG_REQUEST_ID: ${{ inputs.request_id }}
+        run: python3 mobile-work-gateway/scripts/send_result.py

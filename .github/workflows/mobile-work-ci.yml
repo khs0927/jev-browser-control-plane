@@ -1,0 +1,27 @@
+name: Mobile Work Gateway CI
+on:
+  push:
+    branches: [feat/mobile-work-gateway, main]
+    paths: ['mobile-work-gateway/**', '.github/workflows/mobile-work-*.yml']
+  pull_request:
+    paths: ['mobile-work-gateway/**', '.github/workflows/mobile-work-*.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: mobile-work-gateway/gateway
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build

@@ -90,3 +90,12 @@ Never label a successful server test as mobile E2E.
 Official references:
 https://github.blog/changelog/2026-02-19-workflow-dispatch-api-now-returns-run-ids/
 https://developers.cloudflare.com/agents/model-context-protocol/guides/remote-mcp-server/
+
+## Implementation update — 2026-10-03
+This section supersedes the earlier not-implemented/private statuses. Repository is now PUBLIC.
+The gateway contains six SDK MCP tools, owner-restricted GitHub OAuth through the maintained
+Cloudflare provider, D1 task/result schema, dispatch reconciliation, GitHub OIDC callback,
+runner callback sender, CI and manual deployment configuration. Local checks pass.
+Five Plugin skills are adapted with pinned source SHA, file hashes and license/NOTICE preservation.
+Cloudflare credentials/bindings and the new OAuth app are not provisioned. No Worker or mobile
+E2E deployment claim is made. Only environment_check is enabled; other task types remain reserved.
