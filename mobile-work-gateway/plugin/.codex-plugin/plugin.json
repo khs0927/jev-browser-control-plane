@@ -1,0 +1,18 @@
+{
+  "name": "mobile-work-gateway",
+  "version": "0.1.0",
+  "description": "Mobile development planning, engineering, design and marketing review. Execution tools require a separately deployed Gateway; not connected yet.",
+  "author": {
+    "name": "최승호"
+  },
+  "skills": "./skills",
+  "interface": {
+    "displayName": "Mobile Work Gateway",
+    "shortDescription": "Project skills · execution pending",
+    "longDescription": "Five skills for mobile project work. Six MCP execution tools are implemented in the repository but deployment and mobile connection remain pending.",
+    "developerName": "최승호",
+    "category": "Productivity",
+    "defaultPrompt": "프로젝트 작업 범위와 연결 상태를 확인하고 지원되는 작업만 실행해줘.",
+    "capabilities": []
+  }
+}

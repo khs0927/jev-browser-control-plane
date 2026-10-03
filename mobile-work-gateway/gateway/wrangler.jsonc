@@ -1,0 +1,6 @@
+{
+ "name":"mobile-work-gateway","main":"src/worker.ts","compatibility_date":"2026-03-01",
+ "compatibility_flags":["nodejs_compat"],
+ "vars":{"OWNER_ID":"130247531","REPOSITORY":"khs0927/jev-browser-control-plane","REPOSITORY_ID":"1383744512","WORKFLOW":"mobile-work-environment.yml","REVIEWED_REF":"main"},
+ "d1_databases":[],"kv_namespaces":[]
+}
