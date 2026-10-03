@@ -18,7 +18,7 @@ def collect():
         "test_passed": probe.returncode == 0,
         "commit_sha": os.environ.get("GITHUB_SHA"),
         "run_id": os.environ.get("GITHUB_RUN_ID"),
-        "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+        "run_attempt": int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")),
         "summary": "Python JSON fixture passed." if probe.returncode == 0 else "Python JSON fixture failed.",
         "findings": [] if probe.returncode == 0 else [{"code": "environment_fixture_failed"}],
         "evidence": ["result.json", "report.md"],
