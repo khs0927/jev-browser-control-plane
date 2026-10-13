@@ -1,0 +1,56 @@
+name: Activepieces mobile runner smoke
+run-name: 'ap-mobile:${{ inputs.request_id || github.run_id }}'
+on:
+  pull_request:
+    paths:
+      - .github/workflows/ap-mobile-fixture.yml
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: Trace identifier only (not interpreted as commands)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: 'ap-mobile-fixture-${{ github.event_name }}-${{ github.event.pull_request.number || inputs.request_id || github.run_id }}'
+  cancel-in-progress: false
+
+jobs:
+  environment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Check out reviewed public code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run bounded public Python environment fixture
+        run: python3 mobile-work-gateway/scripts/environment_check.py
+      - name: Independently verify fixture result
+        env:
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          obj = json.loads(Path("mobile-work-results/result.json").read_text())
+          assert obj["task_type"] == "environment_check"
+          assert obj["test_passed"] is True
+          assert obj["run_id"] == os.environ["GH_RUN_ID"]
+          assert obj["commit_sha"] == os.environ["GH_SHA"]
+          print("Fixture verified against current run and commit")
+          PY
+      - name: Upload public, short-lived evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ap-mobile-fixture-results
+          path: mobile-work-results/
+          if-no-files-found: error
+          retention-days: 3
