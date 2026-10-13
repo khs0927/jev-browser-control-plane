@@ -137,6 +137,29 @@ def create_mcp(*, token_verifier=None, auth=None, instance=None):
                     "threshold_status": "uncalibrated", "advisory_only": True}
         except Exception:
             return {"status": "error", "reason": "TypeSafe request failed", "retry_automatically": False}
+
+    # Diagram functions share the same OAuth/owner gate as JEV. Never proxy to
+    # the previously public, unauthenticated Vercel Diagram MCP endpoint.
+    @mcp.tool(annotations=annotations)
+    def diagram_status() -> dict[str, Any]:
+        """Check owner-authenticated Diagram MCP capability without external access."""
+        return {"ok": True, "version": "private-0.1.0",
+                "tools": ["diagram_status", "diagram_render", "diagram_validate_svg"],
+                "formats": ["SVG", "HTML"], "storage": "stateless",
+                "authorization": "GitHub OAuth; JEV owner-only token enforcement"}
+
+    @mcp.tool(annotations=annotations)
+    def diagram_render(title: str, nodes: list[dict], edges: list[dict],
+                       direction: str = "LR", subtitle: str = "") -> dict[str, Any]:
+        """Render up to 24 nodes and 48 edges as SVG/HTML after owner OAuth."""
+        from diagram_engine import render
+        return render(title, nodes, edges, direction, subtitle)
+
+    @mcp.tool(annotations=annotations)
+    def diagram_validate_svg(svg: str) -> dict[str, Any]:
+        """Check a diagram SVG's XML syntax and reject executable/external references."""
+        from diagram_engine import validate_svg
+        return validate_svg(svg)
     return mcp
 
 def http_server():
