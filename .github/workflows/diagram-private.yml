@@ -1,0 +1,40 @@
+name: Private Diagram OAuth Gateway CI
+on:
+  push:
+    branches:
+      - feat/private-diagram-mcp-oauth
+  pull_request:
+    paths:
+      - 'plugin/jev-decision-plugin/gateway/**'
+      - '.github/workflows/diagram-private.yml'
+permissions:
+  contents: read
+jobs:
+  diagram-private:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile gateway
+        run: python -m compileall -q plugin/jev-decision-plugin/gateway
+      - name: Run stateless diagram tests
+        working-directory: plugin/jev-decision-plugin/gateway
+        run: python -m unittest -v test_diagram_engine.py
+      - name: Assert existing OAuth owner gate remains wired
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src = Path('plugin/jev-decision-plugin/gateway/server.py').read_text()
+          auth = Path('plugin/jev-decision-plugin/gateway/github_auth.py').read_text()
+          hosted = Path('plugin/jev-decision-plugin/gateway/hosted.py').read_text()
+          assert 'OwnerGitHubProvider' in auth
+          assert 'async def load_access_token' in auth
+          assert "claims or {}" in auth and "OWNER_ID" in auth
+          assert "FastMCP('JEV Decision Plugin',auth=auth" in auth
+          assert "JEV_AUTH_PROVIDER" in hosted
+          assert "diagram_render" in src and "diagram_validate_svg" in src
+          assert 'vercel.app' not in src
+          print('OAuth integration source checks passed; live handshake requires hosted deployment')
+          PY
