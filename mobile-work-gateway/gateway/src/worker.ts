@@ -2,13 +2,14 @@ import OAuthProvider,{authorizationErrorRedirect} from '@cloudflare/workers-oaut
 import {mcp} from './mcp.js';
 import {callback} from './callback.js';
 import type {Env} from './types.js';
+import {hasGitHubExecution} from './github-auth.js';
 const escape=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 const redirect=(headers:Headers,url:string)=>{headers.set('Location',url);return new Response(null,{status:302,headers});};
 const authHandler={async fetch(req:Request,env:Env){
  const path=new URL(req.url).pathname,oauth=env.OAUTH_PROVIDER;
  if(path==='/authorize' && req.method==='GET'){
   const original=await oauth.parseAuthRequest(req);
-  const uri=new URL(original.redirectUri);if(uri.origin!=='https://chatgpt.com' || !uri.pathname.startsWith('/connector/oauth/'))return new Response('Unsupported callback',{status:400});
+  const uri=new URL(original.redirectUri);const platformRedirect=uri.origin==='https://chatgpt.com'&&uri.pathname==='/connector_platform_oauth_redirect';const callbackRedirect=uri.origin==='https://chatgpt.com'&&uri.pathname.startsWith('/connector/oauth/');if(!platformRedirect&&!callbackRedirect)return new Response('Unsupported callback',{status:400});
   const description=await oauth.describeConsent(original),consent=await oauth.beginConsent(original);
   consent.headers.set('Content-Type','text/html; charset=utf-8');
   return new Response(`<h1>Mobile Work Gateway</h1><p>Allow ${escape(description.clientName??'ChatGPT')} to run the reviewed environment check and read its results?</p><p>Callback: ${escape(uri.hostname)}</p><p>Scope: mcp:tools</p><form method="post"><input type="hidden" name="handle" value="${escape(consent.handle)}"><button name="decision" value="allow">Allow</button><button name="decision" value="deny">Deny</button></form>`,{headers:consent.headers});
@@ -33,11 +34,11 @@ const authHandler={async fetch(req:Request,env:Env){
 }};
 export default {async fetch(req:Request,env:Env,ctx:ExecutionContext){
  const url=new URL(req.url);
- if(url.pathname==='/health')return Response.json({status:'running',version:'0.1.0',mcp_ready:!!(env.DB&&env.OAUTH_KV&&env.GITHUB_CLIENT_ID&&env.GITHUB_CLIENT_SECRET&&env.GITHUB_TOKEN&&env.PUBLIC_URL)});
+ if(url.pathname==='/health')return Response.json({status:'running',version:'0.1.0',mcp_ready:!!(env.DB&&env.OAUTH_KV&&env.GITHUB_CLIENT_ID&&env.GITHUB_CLIENT_SECRET&&hasGitHubExecution(env)&&env.PUBLIC_URL)});
  if(!env.PUBLIC_URL || url.origin!==env.PUBLIC_URL)return new Response('Configuration required',{status:503});
  try{
   if(url.pathname==='/internal/results')return req.method==='POST'?await callback(req,env):new Response('Method not allowed',{status:405});
-  if(!env.DB||!env.OAUTH_KV||!env.GITHUB_CLIENT_ID||!env.GITHUB_CLIENT_SECRET||!env.GITHUB_TOKEN)return new Response('Configuration required',{status:503});
+  if(!env.DB||!env.OAUTH_KV||!env.GITHUB_CLIENT_ID||!env.GITHUB_CLIENT_SECRET||!hasGitHubExecution(env))return new Response('Configuration required',{status:503});
   const provider=new OAuthProvider<Env>({apiRoute:'/mcp',apiHandler:{fetch:(request:any,e:any,c:any)=>{if(!c.auth.scope.includes('mcp:tools')||c.props.ownerId!==e.OWNER_ID)return new Response('Forbidden',{status:403});return mcp(request,e,c.props.ownerId);}},defaultHandler:authHandler,authorizeEndpoint:'/authorize',tokenEndpoint:'/oauth/token',clientRegistrationEndpoint:'/register',scopesSupported:['mcp:tools'],requiredScopes:['mcp:tools'],resourceMetadata:{resource:`${env.PUBLIC_URL}/mcp`,authorization_servers:[env.PUBLIC_URL]},clientIdMetadataDocumentEnabled:false,accessTokenTTL:3600});
   return await provider.fetch(req,env,ctx);
  }catch{return Response.json({error:'request_rejected'},{status:400});}

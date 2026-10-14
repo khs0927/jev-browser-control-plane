@@ -1,9 +1,11 @@
 import {createInput,taskInput,artifactInput,resultInput,digest,bindRun} from './policy.js';
 import type {Env,Task} from './types.js';
+import {getGitHubToken} from './github-auth.js';
 export class Service {
  constructor(readonly env:Env,readonly owner:string,readonly request:typeof fetch=fetch){if(owner!==env.OWNER_ID)throw Error('forbidden');}
  async gh(path:string,method='GET',body?:unknown):Promise<any>{
-  const response=await this.request(`https://api.github.com/repos/${this.env.REPOSITORY}/${path}`,{method,headers:{Authorization:`Bearer ${this.env.GITHUB_TOKEN}`,Accept:'application/vnd.github+json','User-Agent':'MobileWorkGateway','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(15000),redirect:'manual'});
+  const token=await getGitHubToken(this.env,this.request);
+  const response=await this.request(`https://api.github.com/repos/${this.env.REPOSITORY}/${path}`,{method,headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','User-Agent':'MobileWorkGateway','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(15000),redirect:'manual'});
   if(!response.ok)throw Error(`github_${response.status}`);const text=await response.text();return text?JSON.parse(text):null;
  }
  async task(id:string){taskInput.parse({task_id:id});const task=await this.env.DB.prepare('SELECT * FROM tasks WHERE task_id=? AND owner_id=?').bind(id,this.owner).first<Task>();if(!task)throw Error('task_not_found');return task;}
