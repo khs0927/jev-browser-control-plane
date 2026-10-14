@@ -15,6 +15,13 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
+      - name: Fail-closed reviewed SHA guard
+        env:
+          REVIEWED_SHA: ${{ vars.MWG_REVIEWED_SHA }}
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then echo "Refusing: ref is not refs/heads/main" >&2; exit 1; fi
+          if [ -z "$REVIEWED_SHA" ] || [ "$GITHUB_SHA" != "$REVIEWED_SHA" ]; then echo "Refusing: GITHUB_SHA does not match MWG_REVIEWED_SHA" >&2; exit 1; fi
+        working-directory: .
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24'
