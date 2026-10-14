@@ -19,6 +19,29 @@ export class Service {
   }
   const run=await this.gh(`actions/runs/${task.run_id}`);bindRun(run,this.env,task);return run;
  }
+ async inspect_repository(){
+  const repo=await this.gh('');
+  if(String(repo.id)!==this.env.REPOSITORY_ID)throw Error('repository_identity_mismatch');
+  const [head,runs]=await Promise.all([
+   this.gh(`commits/${encodeURIComponent(this.env.REVIEWED_REF)}`),
+   this.gh(`actions/workflows/${encodeURIComponent(this.env.WORKFLOW)}/runs?event=workflow_dispatch&branch=${encodeURIComponent(this.env.REVIEWED_REF)}&per_page=5`)
+  ]);
+  const currentSha=String(head.sha??'');
+  const match=currentSha===this.env.REVIEWED_SHA;
+  return {
+   repository:this.env.REPOSITORY,
+   visibility:repo.visibility,
+   reviewed_ref:this.env.REVIEWED_REF,
+   reviewed_sha:this.env.REVIEWED_SHA,
+   current_head_sha:currentSha,
+   head_matches_reviewed_sha:match,
+   dispatch_ready:repo.visibility==='public'&&match,
+   recent_runs:(Array.isArray(runs.workflow_runs)?runs.workflow_runs:[]).slice(0,5).map((run:any)=>({
+    run_id:String(run.id),status:run.status,conclusion:run.conclusion??null,
+    run_url:run.html_url??null,created_at:run.created_at??null
+   }))
+  };
+ }
  async system_status(){let github='unavailable';try{const repo=await this.gh('');github=repo.visibility==='public'?'ok':'private_repository';}catch{}return {gateway:'ok',version:'0.1.0',authentication:'ok',github_connection:github,supported_tasks:[...TASK_TYPES]};}
  async create_task(raw:unknown){
   const input=createInput.parse(raw);if(input.ref!==this.env.REVIEWED_REF || !/^[a-f0-9]{40}$/.test(this.env.REVIEWED_SHA))throw Error('unreviewed_ref');
