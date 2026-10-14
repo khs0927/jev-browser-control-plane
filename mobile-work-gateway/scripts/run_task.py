@@ -4,6 +4,9 @@ import os
 import platform
 import subprocess
 import sys
+import ipaddress
+import socket
+from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -39,15 +42,64 @@ def gateway_tests():
     return base("gateway_tests", ok, summary, [] if ok else [{"code": "gateway_tests_failed"}]), "\n".join(log)
 
 
+
+@lru_cache(maxsize=64)
+def _public_dns(host):
+    """Reject every host that resolves to any non-global address."""
+    try:
+        addresses = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
+        return bool(addresses) and all(
+            ipaddress.ip_address(entry[4][0]).is_global for entry in addresses
+        )
+    except (OSError, ValueError):
+        return False
+
+
+def safe_browser_url(url, expected_host):
+    """Fail closed for redirects and requests outside the reviewed public host."""
+    try:
+        parts = urlparse(url)
+        host = (parts.hostname or "").lower().rstrip(".")
+        if (
+            parts.scheme != "https" or not host or
+            parts.username or parts.password or
+            parts.port not in (None, 443) or
+            host != expected_host or
+            host in ("localhost",) or
+            host.endswith((".local", ".internal", ".localhost", ".test", ".invalid", ".home.arpa"))
+        ):
+            return False
+        try:
+            ipaddress.ip_address(host)
+            return False
+        except ValueError:
+            pass
+        return _public_dns(host)
+    except (ValueError, TypeError):
+        return False
+
+
 def browser_check():
     url = os.environ.get("MWG_TARGET_URL", "")
     parsed = urlparse(url)
-    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
-        return base("browser_check", False, "Rejected target URL.", [{"code": "invalid_target_url"}]), "Rejected URL\n"
+    host = (parsed.hostname or "").lower().rstrip(".")
+    if not safe_browser_url(url, host):
+        return base("browser_check", False, "Rejected non-public target URL.", [{"code": "invalid_target_url"}]), "Rejected URL\n"
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page(viewport={"width": 1280, "height": 800})
+        context = browser.new_context(
+            viewport={"width": 1280, "height": 800},
+            service_workers="block",
+            accept_downloads=False,
+        )
+        page = context.new_page()
+        def guard(route):
+            if safe_browser_url(route.request.url, host):
+                route.continue_()
+            else:
+                route.abort("blockedbyclient")
+        page.route("**/*", guard)
         try:
             resp = page.goto(url, wait_until="load", timeout=30000)
             status = resp.status if resp else 0
@@ -62,7 +114,7 @@ def browser_check():
             result = base("browser_check", False, f"Navigation failed: {type(exc).__name__}", [{"code": "navigation_failed"}])
         finally:
             browser.close()
-    return result, f"URL: {url}\n\nTitle: {result.get('page_title', '')}\n\nHTTP: {result.get('http_status', '')}\n"
+    return result, f"Hostname: {host}\n\nTitle: {result.get('page_title', '')}\n\nHTTP: {result.get('http_status', '')}\n"
 
 
 def environment_check():
