@@ -12,12 +12,23 @@ on:
         description: Gateway reservation UUID
         required: true
         type: string
+      task_type:
+        description: Allowlisted task type
+        required: false
+        default: environment_check
+        type: choice
+        options: [environment_check, gateway_tests, browser_check]
+      target_url:
+        description: Public HTTPS URL for browser_check
+        required: false
+        default: ''
+        type: string
 permissions:
   contents: read
 jobs:
   environment:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     permissions:
       contents: read
       id-token: write
@@ -25,8 +36,18 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - name: Check runner Python and public JSON fixture
-        run: python3 mobile-work-gateway/scripts/environment_check.py
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        if: inputs.task_type == 'gateway_tests'
+        with:
+          node-version: '24'
+      - name: Install browser runtime
+        if: inputs.task_type == 'browser_check'
+        run: python3 -m pip install --quiet playwright==1.55.0 && python3 -m playwright install --with-deps chromium
+      - name: Run allowlisted task
+        env:
+          MWG_TASK_TYPE: ${{ inputs.task_type || 'environment_check' }}
+          MWG_TARGET_URL: ${{ inputs.target_url }}
+        run: python3 mobile-work-gateway/scripts/run_task.py
       - name: Upload public results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

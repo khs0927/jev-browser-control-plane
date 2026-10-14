@@ -1,4 +1,4 @@
-import {createInput,taskInput,artifactInput,resultInput,digest,bindRun} from './policy.js';
+import {createInput,taskInput,artifactInput,resultInput,digest,bindRun,TASK_TYPES} from './policy.js';
 import type {Env,Task} from './types.js';
 import {getGitHubToken} from './github-auth.js';
 export class Service {
@@ -19,10 +19,10 @@ export class Service {
   }
   const run=await this.gh(`actions/runs/${task.run_id}`);bindRun(run,this.env,task);return run;
  }
- async system_status(){let github='unavailable';try{const repo=await this.gh('');github=repo.visibility==='public'?'ok':'private_repository';}catch{}return {gateway:'ok',version:'0.1.0',authentication:'ok',github_connection:github,supported_tasks:['environment_check']};}
+ async system_status(){let github='unavailable';try{const repo=await this.gh('');github=repo.visibility==='public'?'ok':'private_repository';}catch{}return {gateway:'ok',version:'0.1.0',authentication:'ok',github_connection:github,supported_tasks:[...TASK_TYPES]};}
  async create_task(raw:unknown){
   const input=createInput.parse(raw);if(input.ref!==this.env.REVIEWED_REF || !/^[a-f0-9]{40}$/.test(this.env.REVIEWED_SHA))throw Error('unreviewed_ref');
-  const hash=await digest(JSON.stringify({type:input.task_type,ref:input.ref,sha:this.env.REVIEWED_SHA}));const id=crypto.randomUUID();
+  const hash=await digest(JSON.stringify({type:input.task_type,ref:input.ref,sha:this.env.REVIEWED_SHA,parameters:input.parameters??{}}));const id=crypto.randomUUID();
   await this.env.DB.prepare('INSERT INTO tasks(task_id,owner_id,request_key,digest,task_type,ref,sha,dispatch_state,created_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(owner_id,request_key) DO NOTHING').bind(id,this.owner,input.idempotency_key,hash,input.task_type,input.ref,this.env.REVIEWED_SHA,'reserved',Date.now()).run();
   const task=await this.env.DB.prepare('SELECT * FROM tasks WHERE owner_id=? AND request_key=?').bind(this.owner,input.idempotency_key).first<Task>();if(!task || task.digest!==hash)throw Error('idempotency_conflict');
   if(task.task_id!==id)return this.get_task({task_id:task.task_id});
@@ -32,7 +32,7 @@ export class Service {
   }catch(error){await this.env.DB.prepare('UPDATE tasks SET dispatch_state=? WHERE task_id=?').bind('rejected',id).run();throw error;}
   await this.env.DB.prepare('UPDATE tasks SET dispatch_state=? WHERE task_id=?').bind('dispatch_unknown',id).run();
   try{
-   const detail=await this.gh(`actions/workflows/${this.env.WORKFLOW}/dispatches`,'POST',{ref:input.ref,inputs:{request_id:id},return_run_details:true});
+   const detail=await this.gh(`actions/workflows/${this.env.WORKFLOW}/dispatches`,'POST',{ref:input.ref,inputs:{request_id:id,task_type:input.task_type,target_url:input.task_type==='browser_check'?input.parameters.url:''},return_run_details:true});
    const runId=detail?.workflow_run_id??detail?.id;
    if(!runId || !/^[0-9]+$/.test(String(runId)))return {task_id:id,status:'dispatch_unknown',conclusion:null};
    const run=await this.gh(`actions/runs/${runId}`);bindRun(run,this.env,task);
