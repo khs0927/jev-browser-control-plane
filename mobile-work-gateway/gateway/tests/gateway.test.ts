@@ -14,3 +14,14 @@ test('run binding rejects wrong workflow and result schema rejects injected extr
 test('official SDK initializes and lists exactly six tools',async()=>{const f=fixture();const headers={'Content-Type':'application/json',Accept:'application/json, text/event-stream'};const init=await mcp(new Request('https://example.com/mcp',{method:'POST',headers,body:JSON.stringify({jsonrpc:'2.0',id:1,method:'initialize',params:{protocolVersion:'2025-03-26',capabilities:{},clientInfo:{name:'test',version:'1'}}})}),f.env,'1');assert.equal(init.status,200);const list=await mcp(new Request('https://example.com/mcp',{method:'POST',headers,body:JSON.stringify({jsonrpc:'2.0',id:2,method:'tools/list'})}),f.env,'1');const body:any=await list.json();assert.deepEqual(body.result.tools.map((t:any)=>t.name).sort(),['cancel_task','create_task','get_artifact','get_task','list_artifacts','system_status']);});
 test('repository lookup uses the canonical URL without a trailing slash',async()=>{const f=fixture();const urls:string[]=[];const service=new Service(f.env,'1',async(url:any,opts:any)=>{urls.push(String(url));return f.request(url,opts);});assert.equal((await service.system_status()).github_connection,'ok');assert.ok(urls.includes('https://api.github.com/repos/owner/repo'));assert.ok(urls.every(u=>!u.endsWith('/')));});
 test('default request does not call fetch as a method of Service',async()=>{const f=fixture();const original=globalThis.fetch;let thisArg:any='unset';(globalThis as any).fetch=function(this:any,url:any,opts:any){thisArg=this;return f.request(url,opts);};try{const service=new Service(f.env,'1');await service.system_status();assert.ok(thisArg===undefined||thisArg===globalThis);}finally{globalThis.fetch=original;}});
+
+test('new allowlisted task types dispatch with typed inputs; unsafe browser URLs rejected',async()=>{const f=fixture();
+await assert.rejects(()=>f.service.create_task({...input,task_type:'browser_check',parameters:{url:'http://example.com'}}));
+await assert.rejects(()=>f.service.create_task({...input,task_type:'browser_check',parameters:{url:'https://127.0.0.1/'}}));
+await assert.rejects(()=>f.service.create_task({...input,task_type:'browser_check',parameters:{url:'https://localhost/'}}));
+await assert.rejects(()=>f.service.create_task({...input,task_type:'gateway_tests',parameters:{command:'x'}}));
+assert.equal(f.dispatches(),0);
+await f.service.create_task({...input,idempotency_key:'browser_key_1234567890',task_type:'browser_check',parameters:{url:'https://example.com/'}});
+await f.service.create_task({...input,idempotency_key:'tests_key_12345678901',task_type:'gateway_tests'});
+assert.equal(f.dispatches(),2);
+await assert.rejects(()=>f.service.create_task({...input,idempotency_key:'browser_key_1234567890',task_type:'browser_check',parameters:{url:'https://example.org/'}}));});
