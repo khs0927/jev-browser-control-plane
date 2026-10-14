@@ -9,8 +9,11 @@ Only environment_check is enabled. The other requested task types and codegraph 
 1. Provision a D1 database named mobile-work-gateway and KV namespace for OAuth provider state.
 2. Set repository/environment variables MWG_D1_ID, MWG_OAUTH_KV_ID, MWG_PUBLIC_URL,
    MWG_REVIEWED_SHA and MWG_RESULT_ENDPOINT (PUBLIC_URL + /internal/results).
-3. Worker secrets: GITHUB_TOKEN (only this repository, Actions write/Contents read),
-   GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET for a new OAuth app callback PUBLIC_URL/callback.
+3. Worker secrets: GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID and GITHUB_APP_PRIVATE_KEY
+   (required GitHub App triple; a single-line PEM is accepted and PKCS1 keys are supported).
+   The App installation is limited to this repository with Actions write/Contents read.
+   GITHUB_TOKEN is legacy-optional and no longer required when the App triple is set.
+   GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are for a new OAuth app callback PUBLIC_URL/callback.
    Do not copy the JEV connector client registration or its callback.
 4. Deployment credentials: CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in the
    mobile-work-production environment. The worker must stay on the Free plan.
