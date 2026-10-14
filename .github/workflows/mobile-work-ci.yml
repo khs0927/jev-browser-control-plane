@@ -28,3 +28,22 @@ jobs:
       - name: Unit-test browser URL egress policy
         working-directory: .
         run: python3 -m unittest discover -s mobile-work-gateway/scripts -p 'test_*.py' -v
+  browser-egress-smoke:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install Playwright on ephemeral cloud runner
+        run: python3 -m pip install --quiet playwright==1.55.0 && python3 -m playwright install --with-deps chromium
+      - name: Test real public browser through fail-closed navigation
+        env:
+          MWG_TASK_TYPE: browser_check
+          MWG_TARGET_URL: https://example.com/
+        run: |
+          python3 mobile-work-gateway/scripts/run_task.py
+          python3 -c "import json; r=json.load(open('mobile-work-results/result.json')); assert r['test_passed'] and r['http_status']==200 and r['page_title']=='Example Domain',r"
