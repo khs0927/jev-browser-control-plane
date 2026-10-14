@@ -2,7 +2,7 @@ import {createInput,taskInput,artifactInput,resultInput,digest,bindRun} from './
 import type {Env,Task} from './types.js';
 import {getGitHubToken} from './github-auth.js';
 export class Service {
- constructor(readonly env:Env,readonly owner:string,readonly request:typeof fetch=fetch){if(owner!==env.OWNER_ID)throw Error('forbidden');}
+ constructor(readonly env:Env,readonly owner:string,readonly request:typeof fetch=((input:any,init?:any)=>fetch(input,init)) as typeof fetch){if(owner!==env.OWNER_ID)throw Error('forbidden');}
  async gh(path:string,method='GET',body?:unknown):Promise<any>{
   const token=await getGitHubToken(this.env,this.request);
   const response=await this.request(`https://api.github.com/repos/${this.env.REPOSITORY}${path?`/${path}`:''}`,{method,headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','User-Agent':'MobileWorkGateway','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(15000),redirect:'manual'});
