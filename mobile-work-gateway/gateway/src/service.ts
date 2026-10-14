@@ -19,7 +19,7 @@ export class Service {
   }
   const run=await this.gh(`actions/runs/${task.run_id}`);bindRun(run,this.env,task);return run;
  }
- async system_status(){let github='unavailable';try{const repo=await this.gh('');github=repo.visibility==='public'?'ok':'private_repository';}catch{}return {gateway:'ok',version:'0.1.0',authentication:'ok',github_connection:github,supported_tasks:[...TASK_TYPES]};}
+ async system_status(){let github='unavailable';try{const repo=await this.gh('');github=repo.visibility==='public'?'ok':'private_repository';}catch{}return {gateway:'ok',version:'0.2.0',authentication:'ok',github_connection:github,supported_tasks:[...TASK_TYPES],browser_tools:['browser_read','browser_act','browser_profiles'],browser_ready:!!(this.env.BROWSER&&this.env.BROWSER_PROFILE_KEY)};}
  async create_task(raw:unknown){
   const input=createInput.parse(raw);if(input.ref!==this.env.REVIEWED_REF || !/^[a-f0-9]{40}$/.test(this.env.REVIEWED_SHA))throw Error('unreviewed_ref');
   const hash=await digest(JSON.stringify({type:input.task_type,ref:input.ref,sha:this.env.REVIEWED_SHA,parameters:input.parameters??{}}));const id=crypto.randomUUID();

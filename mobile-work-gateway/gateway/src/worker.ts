@@ -34,7 +34,7 @@ const authHandler={async fetch(req:Request,env:Env){
 }};
 export default {async fetch(req:Request,env:Env,ctx:ExecutionContext){
  const url=new URL(req.url);
- if(url.pathname==='/health')return Response.json({status:'running',version:'0.1.0',mcp_ready:!!(env.DB&&env.OAUTH_KV&&env.GITHUB_CLIENT_ID&&env.GITHUB_CLIENT_SECRET&&hasGitHubExecution(env)&&env.PUBLIC_URL)});
+ if(url.pathname==='/health')return Response.json({status:'running',version:'0.2.0',browser_ready:!!(env.BROWSER&&env.BROWSER_PROFILE_KEY),mcp_ready:!!(env.DB&&env.OAUTH_KV&&env.GITHUB_CLIENT_ID&&env.GITHUB_CLIENT_SECRET&&hasGitHubExecution(env)&&env.PUBLIC_URL)});
  if(!env.PUBLIC_URL || url.origin!==env.PUBLIC_URL)return new Response('Configuration required',{status:503});
  try{
   if(url.pathname==='/internal/results')return req.method==='POST'?await callback(req,env):new Response('Method not allowed',{status:405});
