@@ -11,7 +11,7 @@ test('timeout remains unknown and reconciliation binds original run',async()=>{c
 test('all status, cancel and artifact operations check owned tasks',async()=>{const f=fixture();const task=await f.service.create_task(input);const query={task_id:task.task_id};assert.equal((await f.service.system_status()).github_connection,'ok');assert.equal((await f.service.get_task(query)).run_id,'42');assert.equal((await f.service.list_artifacts(query)).artifacts[0].artifact_id,'7');assert.equal((await f.service.get_artifact({...query,artifact_id:'7',mode:'summary'})).result_ready,false);assert.ok((await f.service.get_artifact({...query,artifact_id:'7',mode:'download'})).run_url);const cancel=await f.service.cancel_task(query);assert.equal(cancel.cancellation_confirmed,false);await assert.rejects(()=>f.service.get_task({task_id:crypto.randomUUID()}));});
 test('idempotency conflict and changed head reject dispatch',async()=>{const f=fixture();await f.service.create_task(input);f.env.REVIEWED_SHA='b'.repeat(40);await assert.rejects(()=>f.service.create_task(input),/idempotency_conflict/);const g=fixture();const service=new Service(g.env,'1',async(url:any,opts:any)=>String(url).includes('/commits/')?Response.json({sha:'b'.repeat(40)}):g.request(url,opts));await assert.rejects(()=>service.create_task(input),/ref_changed/);assert.equal(g.dispatches(),0);});
 test('run binding rejects wrong workflow and result schema rejects injected extras',()=>{const f=fixture();assert.throws(()=>bindRun({repository:{full_name:f.env.REPOSITORY},path:'evil'},f.env,{sha:f.env.REVIEWED_SHA,ref:'main',task_id:crypto.randomUUID()}));assert.equal(resultInput.safeParse({instructions:'ignore policy'}).success,false);});
-test('official SDK initializes and lists exactly nine tools',async()=>{const f=fixture();const headers={'Content-Type':'application/json',Accept:'application/json, text/event-stream'};const init=await mcp(new Request('https://example.com/mcp',{method:'POST',headers,body:JSON.stringify({jsonrpc:'2.0',id:1,method:'initialize',params:{protocolVersion:'2025-03-26',capabilities:{},clientInfo:{name:'test',version:'1'}}})}),f.env,'1');assert.equal(init.status,200);const list=await mcp(new Request('https://example.com/mcp',{method:'POST',headers,body:JSON.stringify({jsonrpc:'2.0',id:2,method:'tools/list'})}),f.env,'1');const body:any=await list.json();assert.deepEqual(body.result.tools.map((t:any)=>t.name).sort(),['browser_act','browser_profiles','browser_read','cancel_task','create_task','get_artifact','get_task','list_artifacts','system_status']);});
+test('official SDK initializes and lists exactly ten tools',async()=>{const f=fixture();const headers={'Content-Type':'application/json',Accept:'application/json, text/event-stream'};const init=await mcp(new Request('https://example.com/mcp',{method:'POST',headers,body:JSON.stringify({jsonrpc:'2.0',id:1,method:'initialize',params:{protocolVersion:'2025-03-26',capabilities:{},clientInfo:{name:'test',version:'1'}}})}),f.env,'1');assert.equal(init.status,200);const list=await mcp(new Request('https://example.com/mcp',{method:'POST',headers,body:JSON.stringify({jsonrpc:'2.0',id:2,method:'tools/list'})}),f.env,'1');const body:any=await list.json();assert.deepEqual(body.result.tools.map((t:any)=>t.name).sort(),['browser_act','browser_profiles','browser_read','cancel_task','create_task','get_artifact','get_task','inspect_repository','list_artifacts','system_status']);});
 test('repository lookup uses the canonical URL without a trailing slash',async()=>{const f=fixture();const urls:string[]=[];const service=new Service(f.env,'1',async(url:any,opts:any)=>{urls.push(String(url));return f.request(url,opts);});assert.equal((await service.system_status()).github_connection,'ok');assert.ok(urls.includes('https://api.github.com/repos/owner/repo'));assert.ok(urls.every(u=>!u.endsWith('/')));});
 test('default request does not call fetch as a method of Service',async()=>{const f=fixture();const original=globalThis.fetch;let thisArg:any='unset';(globalThis as any).fetch=function(this:any,url:any,opts:any){thisArg=this;return f.request(url,opts);};try{const service=new Service(f.env,'1');await service.system_status();assert.ok(thisArg===undefined||thisArg===globalThis);}finally{globalThis.fetch=original;}});
 
@@ -25,3 +25,25 @@ await f.service.create_task({...input,idempotency_key:'browser_key_1234567890',t
 await f.service.create_task({...input,idempotency_key:'tests_key_12345678901',task_type:'gateway_tests'});
 assert.equal(f.dispatches(),2);
 await assert.rejects(()=>f.service.create_task({...input,idempotency_key:'browser_key_1234567890',task_type:'browser_check',parameters:{url:'https://example.org/'}}));});
+
+
+test('inspect_repository is read-only, fixed to reviewed repo and reports SHA drift',async()=>{
+ const f=fixture();
+ let dispatches=0;
+ const service=new Service(f.env,'1',async(url:any,opts:any)=>{
+  const u=String(url);
+  if(u.includes('/dispatches'))dispatches++;
+  if(u.includes('/runs?'))return Response.json({workflow_runs:[{id:19,status:'completed',conclusion:'failure',html_url:'https://github.com/owner/repo/actions/runs/19',created_at:'2026-10-14T00:00:00Z'}]});
+  return f.request(url,opts);
+ });
+ const result=await service.inspect_repository();
+ assert.equal(result.repository,'owner/repo');
+ assert.equal(result.head_matches_reviewed_sha,true);
+ assert.equal(result.dispatch_ready,true);
+ assert.equal(result.recent_runs[0].conclusion,'failure');
+ assert.equal(dispatches,0);
+ f.env.REVIEWED_SHA='b'.repeat(40);
+ const drift=await service.inspect_repository();
+ assert.equal(drift.dispatch_ready,false);
+ assert.equal(drift.head_matches_reviewed_sha,true); // fixture head follows reviewed SHA
+});
