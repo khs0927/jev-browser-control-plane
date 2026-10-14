@@ -42,8 +42,12 @@ test('inspect_repository is read-only, fixed to reviewed repo and reports SHA dr
  assert.equal(result.dispatch_ready,true);
  assert.equal(result.recent_runs[0].conclusion,'failure');
  assert.equal(dispatches,0);
- f.env.REVIEWED_SHA='b'.repeat(40);
- const drift=await service.inspect_repository();
+ const driftService=new Service(f.env,'1',async(url:any,opts:any)=>{
+  if(String(url).includes('/commits/'))return Response.json({sha:'b'.repeat(40)});
+  if(String(url).includes('/runs?'))return Response.json({workflow_runs:[]});
+  return f.request(url,opts);
+ });
+ const drift=await driftService.inspect_repository();
  assert.equal(drift.dispatch_ready,false);
- assert.equal(drift.head_matches_reviewed_sha,true); // fixture head follows reviewed SHA
+ assert.equal(drift.head_matches_reviewed_sha,false);
 });
