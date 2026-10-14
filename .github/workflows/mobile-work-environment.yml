@@ -48,6 +48,11 @@ jobs:
           MWG_TASK_TYPE: ${{ inputs.task_type || 'environment_check' }}
           MWG_TARGET_URL: ${{ inputs.target_url }}
         run: python3 mobile-work-gateway/scripts/run_task.py
+      - name: Ensure result even after dependency/setup failures
+        if: always()
+        env:
+          MWG_TASK_TYPE: ${{ inputs.task_type || 'environment_check' }}
+        run: python3 mobile-work-gateway/scripts/ensure_result.py
       - name: Upload public results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -57,7 +62,7 @@ jobs:
           if-no-files-found: error
           retention-days: 3
       - name: Deliver owner-bound result
-        if: github.event_name == 'workflow_dispatch'
+        if: always() && github.event_name == 'workflow_dispatch'
         env:
           MWG_RESULT_ENDPOINT: ${{ vars.MWG_RESULT_ENDPOINT }}
           MWG_REQUEST_ID: ${{ inputs.request_id }}
