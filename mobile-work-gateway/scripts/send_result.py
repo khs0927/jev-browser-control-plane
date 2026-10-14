@@ -1,4 +1,7 @@
-"""Send bounded public fixture results with GitHub Actions OIDC; never log tokens."""
+"""Send bounded public fixture results with GitHub Actions OIDC; never log tokens.
+
+An explicit User-Agent is required: Cloudflare rejects the default Python-urllib agent with 403 before the Worker runs.
+"""
 import json
 import os
 import time
@@ -23,7 +26,7 @@ with urllib.request.urlopen(request, timeout=15) as response:
     token = json.load(response)['value']
 for attempt in range(3):
     try:
-        req = urllib.request.Request(endpoint, data=body, headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'})
+        req = urllib.request.Request(endpoint, data=body, headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'User-Agent': 'MobileWorkGatewayResult/1.0'})
         with urllib.request.urlopen(req, timeout=15) as response:
             if not json.load(response).get('accepted'):
                 raise RuntimeError('Callback not accepted')
