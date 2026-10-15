@@ -37,6 +37,11 @@ test('MCP canary opt-in changes tool list only when enabled',async()=>{
  const headers={'Content-Type':'application/json',Accept:'application/json, text/event-stream'};
  const list=async(flag?:string)=>{
   const env={OWNER_ID:'1',CAD_FIXTURE_ENABLED:flag};
+  const init=await mcp(new Request('https://example.com/mcp',{method:'POST',headers,
+   body:JSON.stringify({jsonrpc:'2.0',id:1,method:'initialize',params:{
+    protocolVersion:'2025-03-26',capabilities:{},clientInfo:{name:'canary-test',version:'1'}
+   }})}),env as any,'1');
+  assert.equal(init.status,200);
   const r=await mcp(new Request('https://example.com/mcp',{method:'POST',headers,
    body:JSON.stringify({jsonrpc:'2.0',id:3,method:'tools/list'})}),env as any,'1');
   assert.equal(r.status,200);return (await r.json() as any).result.tools.map((t:any)=>t.name);
