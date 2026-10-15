@@ -18,7 +18,7 @@ services:
     ports:
       - "127.0.0.1:6080:6080"
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/api/ping"]
+      test: ["CMD", "python3", "/usr/local/bin/runtime_health.py"]
       interval: 30s
       timeout: 5s
       retries: 5

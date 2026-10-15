@@ -89,6 +89,7 @@ not prove autonomous goal completion or wake the parent Work conversation.
 ```sh
 python3 preflight.py
 docker compose ps
+docker compose exec -T runtime python3 /usr/local/bin/runtime_health.py
 docker compose logs --tail 100 runtime
 ```
 
@@ -100,6 +101,13 @@ the database without a tested restore point.
 
 ## Current execution record
 
-Actual receipts are recorded in `VERIFICATION.md`. Docker build, public OAuth,
+The container healthcheck requires the expected Chromium browser process, an X11
+socket, ChatCMD HTTP readiness, and the noVNC listener. Known sandbox-disabling
+flags cause failure. Flag inspection does not prove kernel sandbox isolation;
+verify that separately on the target host. Health output contains booleans only
+and never treats process readiness as ChatGPT login, bridge delivery or goal success.
+Offline regression checks: `python3 -m unittest discover -s deploy/chatgpt-vps -p test_runtime_health.py`.
+
+Actual receipts are recorded in `VERIFICATION.md`. Public OAuth,
 ChatGPT sign-in, mobile-only runtime and restart recovery remain unverified until
 they have been performed on the target VPS.

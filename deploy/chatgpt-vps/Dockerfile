@@ -21,6 +21,7 @@ COPY --from=backend /src/target/release/chat-cmd-client /usr/local/bin/chatcmd
 COPY vendor/chatcmd/chatgpt-extension/ /opt/chatcmd-extension/
 COPY supervisord.conf /etc/supervisor/conf.d/runtime.conf
 COPY entrypoint.sh browser.sh /usr/local/bin/
+COPY runtime_health.py /usr/local/bin/runtime_health.py
 RUN chmod 755 /usr/local/bin/entrypoint.sh /usr/local/bin/browser.sh
 WORKDIR /home/runner
 ENV HOME=/home/runner DISPLAY=:99 CHATCMD_BIND=127.0.0.1 CHATCMD_PORT=8080 \
