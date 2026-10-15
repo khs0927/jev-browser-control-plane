@@ -21,7 +21,7 @@ function validate(data:unknown):{drawing_name:string;entities:Shape[]}{
  const x=data as Record<string,unknown>;
  if(!keyset(x,['drawing_name','entities'])||typeof x.drawing_name!=='string'||!x.drawing_name.trim()||x.drawing_name.length>80||/[\x00-\x1f\x7f]/.test(x.drawing_name))reject('invalid_name');
  if(!Array.isArray(x.entities)||x.entities.length<1||x.entities.length>120)reject('invalid_count');
- for(const a of x.entities){
+ for(const a of x.entities as unknown[]){
   if(!a||typeof a!=='object'||Array.isArray(a))reject('invalid_entity');
   const e=a as Record<string,unknown>,t=e.type;
   if(e.layer!==undefined&&(typeof e.layer!=='string'||!names.test(e.layer)))reject('invalid_layer');
