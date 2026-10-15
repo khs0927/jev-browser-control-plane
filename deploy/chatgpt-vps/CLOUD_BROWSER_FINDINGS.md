@@ -56,3 +56,38 @@ Status: BLOCKED_TARGET_ACCESS. The Docker/ChatCMD package is a prepared alternat
 not the only possible runtime. The PC-hosted ai-duet implementation is not a
 cloud-only deployment. Changing to an API agent would change the execution and
 billing model and requires the user's choice; it is not silently substituted.
+
+## Free-only completion review — 2026-10-15, 21:29 KST request
+
+The current user requires free Cloudflare/Workers + GitHub Actions only, with
+explicit approval before production deployment, main merge, permissions, sending,
+deletion or payment. The existing Docker runtime remains inactive reference code;
+it is not a proposal to purchase a VPS.
+
+The current Cloudflare Limits page (updated October 14) states that Workers Free
+has 10 minutes of Browser Run time per account per day, three concurrent browsers,
+and a daily-exhaustion 429 until the next UTC day. Session reuse does not remove
+this account-wide browser time ceiling. Consequently a 24-hour browser worker
+cannot meet this free-only requirement. A bounded daily batch is a different,
+partial capability and must not be labelled continuous goal completion. Other
+projects share the same account budget; a per-job timer alone cannot guarantee
+account-wide availability. Do not add keepalive cron, raise plan limits, split
+accounts to evade quotas, or use metered TinyFish/model calls as a free fallback.
+
+The latest Drive ledger (modified 2026-10-15T12:24:57.820Z) reports a
+browser_quota_exceeded call in another workstream and metered TinyFish. These are
+retrieved reports, not fresh probes in this follow-up. No new browser launch or
+target-site retry was made. The earlier direct ChatGPT403 remains the last
+target-access evidence in this workstream.
+
+Five runtime-health regression tests passed again in the local workspace. Source
+and test blob identities were compared with commit56936884 before relying on
+those results. This is offline health-check verification, not Docker startup,
+kernel sandbox, live authentication or browser delegation verification.
+
+Final acceptance remains BLOCKED_FREE_RUNTIME_AND_TARGET_ACCESS. Production
+deployment approval would not solve the daily quota or the observed403; do not
+ask the owner to approve a deployment as though it would complete this goal.
+No user password, paid subscription or personal PC is requested. Further
+continuation needs a materially changed, legitimate target-access condition and
+an agreed bounded execution scope compatible with the free daily allowance.
