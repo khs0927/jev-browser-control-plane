@@ -33,7 +33,7 @@ function validate(data:unknown):{drawing_name:string;entities:Shape[]}{
   if(t==='text'&&keyset(e,['type','layer','at','text','height'])&&vec(e.at)&&typeof e.text==='string'&&e.text.length>0&&e.text.length<=100&&!/[\x00-\x1f\x7f]/.test(e.text)&&isnum(e.height,10000)&&Number(e.height)>0)continue;
   reject('invalid_or_unsupported_entity');
  }
- return x as {drawing_name:string;entities:Shape[]};
+ return x as unknown as {drawing_name:string;entities:Shape[]};
 }
 function encode(e:Shape):string[]{
  const layer=e.layer??'POWER_CAD',type=e.type,kind=type==='polyline'?'LWPOLYLINE':type.toUpperCase();
