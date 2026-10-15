@@ -3,6 +3,8 @@ import {WebStandardStreamableHTTPServerTransport} from '@modelcontextprotocol/sd
 import {createShape,taskInput,artifactInput} from './policy.js';
 import {Service} from './service.js';
 import {BrowserTools,readShape,actShape,profileShape} from './browser.js';
+import {z} from 'zod';
+import {createCadFixture} from './cad-fixture.js';
 import type {Env} from './types.js';
 export async function mcp(request:Request,env:Env,owner:string){
  const service=new Service(env,owner),server=new McpServer({name:'Mobile Work Gateway',version:'0.2.0'});
@@ -15,6 +17,15 @@ export async function mcp(request:Request,env:Env,owner:string){
   ['browser_profiles','List saved login profiles, or show the sites and cookie counts in one profile (never values).',profileShape,true],
  ] as const;
  for(const [name,description,inputSchema,ro] of browserDefs)server.registerTool(name,{description,inputSchema,annotations:{readOnlyHint:ro,destructiveHint:!ro,idempotentHint:ro,openWorldHint:true}},async(args:unknown)=>{try{const r:any=await (browser[name] as (a:unknown)=>Promise<any>).call(browser,args);if(name==='browser_profiles')return {content:[{type:'text' as const,text:JSON.stringify(r)}]};const content:any[]=[{type:'text',text:JSON.stringify(r.result)}];if(r.image)content.push({type:'image',data:r.image,mimeType:'image/jpeg'});return {content};}catch(error){return {isError:true,content:[{type:'text' as const,text:error instanceof Error && /^[a-z_0-9]+$/.test(error.message)?error.message:'browser_failed'}]};}});
+ // Opt-in synthetic DXF canary: authenticated owner only, no native CAD or original file writes.
+ if(env.CAD_FIXTURE_ENABLED==='true')server.registerTool('cad_fixture_dxf',{
+  description:'Create a bounded synthetic DXF fixture, not a production Power-CAD drawing. Returns DXF text and SHA-256; independent DXF verification is NOT implied.',
+  inputSchema:{template:z.enum(['rectangle','korean-label']),
+   width_mm:z.number().int().min(100).max(20000).optional(),
+   height_mm:z.number().int().min(100).max(20000).optional()},
+  annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}
+ },async args=>{try{const result=await createCadFixture(args);return {content:[{type:'text' as const,text:JSON.stringify(result)}]};}
+ catch{return {isError:true,content:[{type:'text' as const,text:'invalid_fixture_request'}]};}});
  const transport=new WebStandardStreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});await server.connect(transport);
  return transport.handleRequest(request);
 }
