@@ -48,5 +48,5 @@ test('flag off hides Power-CAD tool; flag on exposes it to the OAuth owner',asyn
   assert.equal(response.status,200);return ((await response.json()) as any).result.tools.map((x:any)=>x.name);
  }
  assert.equal((await names()).includes('powercad_generate_dxf'),false);
- assert.equal((await names('true')).filter(n=>n==='powercad_generate_dxf').length,1);
+ assert.equal((await names('true')).filter((n:string)=>n==='powercad_generate_dxf').length,1);
 });
