@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -151,7 +152,7 @@ class JevRouter:
         )
         answer = self._answer(response, question_name, "choices")
 
-        choice = str(getattr(answer, "choice"))
+        choice = str(answer.choice)
         if choice not in candidates:
             raise RuntimeError(f"Jev returned unknown candidate {choice!r}")
 
@@ -192,7 +193,7 @@ class JevRouter:
         answer = self._answer(response, question_name, "nouls")
 
         return NoulDecision(
-            noul=float(getattr(answer, "noul")),
+            noul=float(answer.noul),
             model=self._model(response),
         )
 
@@ -224,7 +225,7 @@ class JevRouter:
         raw_probabilities = dict(getattr(answer, "probabilities", None) or {})
 
         return ScoreDecision(
-            score=float(getattr(answer, "score")),
+            score=float(answer.score),
             confidence=self._optional_float(getattr(answer, "confidence", None)),
             legend={
                 int(key): self._legend_text(value)

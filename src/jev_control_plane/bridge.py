@@ -83,5 +83,5 @@ class BrowserBridge:
     @staticmethod
     def mutation_id(goal: str, step: str, nonce: str | None = None) -> str:
         token = nonce or secrets.token_hex(16)
-        raw = f"{goal}\0{step}\0{token}".encode("utf-8")
+        raw = f"{goal}\0{step}\0{token}".encode()
         return hashlib.sha256(raw).hexdigest()

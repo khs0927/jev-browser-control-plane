@@ -1,11 +1,11 @@
 """Allowlisted task dispatcher for Mobile Work Gateway. Inputs arrive via env, never via shell interpolation."""
+import ipaddress
 import json
 import os
 import platform
+import socket
 import subprocess
 import sys
-import ipaddress
-import socket
 from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlparse
@@ -33,7 +33,7 @@ def gateway_tests():
     log = []
     ok = True
     for step in (["npm", "ci"], ["npm", "run", "check"], ["npm", "test"]):
-        proc = subprocess.run(step, cwd=GATEWAY, capture_output=True, text=True, timeout=420)
+        proc = subprocess.run(step, cwd=GATEWAY, capture_output=True, text=True, timeout=420, check=False)
         log.append(f"## {' '.join(step)}: exit {proc.returncode}\n\n```\n{(proc.stdout + proc.stderr)[-4000:]}\n```\n")
         if proc.returncode != 0:
             ok = False
@@ -110,7 +110,7 @@ def browser_check():
             result["page_title"] = title
             result["http_status"] = status
             result["evidence"].append("screenshot.png")
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - intentional fail-closed boundary
             result = base("browser_check", False, f"Navigation failed: {type(exc).__name__}", [{"code": "navigation_failed"}])
         finally:
             browser.close()
