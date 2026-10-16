@@ -6,6 +6,7 @@ import {BrowserTools,readShape,actShape,profileShape} from './browser.js';
 import type {Env} from './types.js';
 import {generatePowerCadDxf} from './powercad-dxf-free.js';
 import {z} from 'zod';
+import {reserveDraft,sha256,type DraftRequest} from './orch-ledger.js';
 export async function mcp(request:Request,env:Env,owner:string){
  const service=new Service(env,owner),server=new McpServer({name:'Mobile Work Gateway',version:'0.2.0'});
  const definitions=[['system_status','Check gateway and public repository connectivity',{}],['create_task','Run an allowlisted task (environment_check, gateway_tests, browser_check with parameters.url) on the reviewed workflow; reuse the same key after uncertain dispatch',createShape],['inspect_repository','Read pinned repository head and recent workflow runs without starting GitHub Actions',{}],['get_task','Read actual run status and conclusion',taskInput.shape],['cancel_task','Request cancellation; completion must be polled',taskInput.shape],['list_artifacts','List artifacts belonging to an owner-bound run',taskInput.shape],['get_artifact','Read validated small result or provide the run download page',artifactInput.shape]] as const;
@@ -36,6 +37,18 @@ export async function mcp(request:Request,env:Env,owner:string){
   },async(args:unknown)=>{try{const d=await generatePowerCadDxf(args);
     return {content:[{type:'text' as const,text:JSON.stringify(d)}]};}
     catch{return {isError:true,content:[{type:'text' as const,text:'invalid_powercad_dxf_request'}]};}
+  });
+ }
+ // Explicit opt-in: universal orchestrator ledger (reservation only, never executes). Requires a separate ORCH_DB binding with the reviewed schema applied.
+ if(env.ORCH_LEDGER_ENABLED==='true'&&env.ORCH_DB){
+  const db=env.ORCH_DB;
+  server.registerTool('orch_reserve_task',{
+    description:'Reserve an owner-scoped, dry-run orchestrator task by idempotency key. Never dispatches or executes; write actions return status REVIEW and need separate human approval.',
+    inputSchema:{request:z.record(z.string(),z.unknown())},
+    annotations:{readOnlyHint:false,destructiveHint:false,idempotentHint:true,openWorldHint:false},
+  },async(args:any)=>{try{const ownerHash=await sha256('github-owner:'+owner);const r=await reserveDraft(db,ownerHash,args.request as DraftRequest);
+    return {content:[{type:'text' as const,text:JSON.stringify(r)}]};}
+    catch(error){return {isError:true,content:[{type:'text' as const,text:error instanceof Error && /^[a-z_0-9]+$/.test(error.message)?error.message:'orch_request_failed'}]};}
   });
  }
  const transport=new WebStandardStreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});await server.connect(transport);
