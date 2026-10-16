@@ -9,7 +9,7 @@ checkpoint is always created with ``requires_fresh_snapshot=True`` and
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from .router import JevDecision
@@ -68,7 +68,7 @@ def create_checkpoint(
         purpose=purpose.strip(),
         decision=decision,
         next_browser_action=next_browser_action.strip(),
-        observed_at=observed_at or datetime.now(timezone.utc).isoformat(),
+        observed_at=observed_at or datetime.now(UTC).isoformat(),
         model=decision.model,
         source=source,
     )

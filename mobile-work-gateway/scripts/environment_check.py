@@ -6,10 +6,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+
 def collect():
     probe = subprocess.run(
         [sys.executable, "-c", "import json; assert json.loads(json.dumps(dict(ok=True)))['ok']"],
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, timeout=10, check=False,
     )
     return {
         "schema_version": 1,

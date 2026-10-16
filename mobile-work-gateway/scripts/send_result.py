@@ -31,7 +31,7 @@ for attempt in range(3):
             if not json.load(response).get('accepted'):
                 raise RuntimeError('Callback not accepted')
         break
-    except Exception:
+    except Exception:  # noqa: BLE001 - intentional fail-closed boundary
         if attempt == 2:
             raise SystemExit('Result callback delivery failed; inspect gateway and run metadata')
         time.sleep(attempt + 1)
