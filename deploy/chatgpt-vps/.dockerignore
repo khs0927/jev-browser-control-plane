@@ -1,0 +1,8 @@
+.env
+state
+secrets
+evidence
+vendor/*/.git
+vendor/*/node_modules
+vendor/*/web/node_modules
+vendor/*/target

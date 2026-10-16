@@ -1,0 +1,45 @@
+{
+  "chatcmd": {
+    "repository": "int04/ChatCmd",
+    "role": "primary",
+    "commit": "e604ac8cb53322082887f97efdcdd647193de768"
+  },
+  "auto-browser": {
+    "repository": "LvcidPsyche/auto-browser",
+    "role": "standby",
+    "commit": "a3b2ffb7d403362f64a1747b82ed8301329483f0"
+  },
+  "chatgpt-mcp": {
+    "repository": "parkermg/chatgpt-mcp",
+    "role": "standby",
+    "available": false,
+    "reason": "upstream_checkout_unavailable"
+  },
+  "playwright-vnc": {
+    "repository": "DmitriyG228/playwright-vnc",
+    "role": "standby",
+    "commit": "3621cf7c2d5307df19c55b75fdbadc5cda064e8c"
+  },
+  "browser-container": {
+    "repository": "alexanderkrauck/playwright-browser-container",
+    "role": "standby",
+    "commit": "3db6896789b357e093c394cff1cd583aa81c0b4c"
+  },
+  "yolo": {
+    "repository": "kartikkabadi/chatgpt-yolo",
+    "role": "standby",
+    "available": false,
+    "reason": "upstream_checkout_unavailable"
+  },
+  "auto-continue": {
+    "repository": "adamlui/chatgpt-auto-continue",
+    "role": "standby",
+    "available": false,
+    "reason": "upstream_checkout_unavailable"
+  },
+  "web-supporter": {
+    "repository": "the-long-ride/ai-chatweb-supporter",
+    "role": "standby",
+    "commit": "73dd22b1b15f25c8d30a91e0f94753e93779c4b1"
+  }
+}
