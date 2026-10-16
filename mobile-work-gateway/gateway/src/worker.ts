@@ -9,7 +9,7 @@ const authHandler={async fetch(req:Request,env:Env){
  const path=new URL(req.url).pathname,oauth=env.OAUTH_PROVIDER;
  if(path==='/authorize' && req.method==='GET'){
   const original=await oauth.parseAuthRequest(req);
-  const uri=new URL(original.redirectUri);const platformRedirect=uri.origin==='https://chatgpt.com'&&uri.pathname==='/connector_platform_oauth_redirect';const callbackRedirect=uri.origin==='https://chatgpt.com'&&uri.pathname.startsWith('/connector/oauth/');if(!platformRedirect&&!callbackRedirect)return new Response('Unsupported callback',{status:400});
+  const uri=new URL(original.redirectUri);const platformRedirect=uri.origin==='https://chatgpt.com'&&uri.pathname==='/connector_platform_oauth_redirect';const callbackRedirect=uri.origin==='https://chatgpt.com'&&uri.pathname.startsWith('/connector/oauth/');const geminiRedirect=uri.origin==='https://oauth-redirect.googleusercontent.com'&&uri.pathname.startsWith('/r/');if(!platformRedirect&&!callbackRedirect&&!geminiRedirect)return new Response('Unsupported callback',{status:400});
   const description=await oauth.describeConsent(original),consent=await oauth.beginConsent(original);
   consent.headers.set('Content-Type','text/html; charset=utf-8');
   return new Response(`<h1>Mobile Work Gateway</h1><p>Allow ${escape(description.clientName??'ChatGPT')} to run the reviewed environment check and read its results?</p><p>Callback: ${escape(uri.hostname)}</p><p>Scope: mcp:tools</p><form method="post"><input type="hidden" name="handle" value="${escape(consent.handle)}"><button name="decision" value="allow">Allow</button><button name="decision" value="deny">Deny</button></form>`,{headers:consent.headers});
