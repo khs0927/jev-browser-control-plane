@@ -132,6 +132,8 @@ def test_github_oauth_metadata_and_unauthenticated_block(monkeypatch,tmp_path):
             ('https://manufact.com/inspector/oauth/callback',201),
             ('https://chatgpt.com/connector/oauth/fixture',201),
             ('https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-fixture',201),
+            ('https://oauth-redirect-sandbox.googleusercontent.com/a/user_bound_custom-mcp-fixture',201),
+            ('https://oauth-redirect.googleusercontent.com/other/fixture',400),
             ('https://untrusted.test/oauth/callback',400),
             ('https://manufact.com/unapproved-callback',400),
         ]:

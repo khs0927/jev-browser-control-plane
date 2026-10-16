@@ -63,6 +63,11 @@ def github_app():
         allowed_client_redirect_uris=[
             'https://chatgpt.com/connector/oauth/*',
             'https://oauth-redirect.googleusercontent.com/r/*',
+            'https://oauth-redirect.googleusercontent.com/a/*',
+            'https://oauth-redirect-sandbox.googleusercontent.com/r/*',
+            'https://oauth-redirect-sandbox.googleusercontent.com/a/*',
+            'https://oauth-redirect-test.googleusercontent.com/r/*',
+            'https://oauth-redirect-test.googleusercontent.com/a/*',
             'https://manufact.com/inspector/oauth/callback'],
         require_authorization_consent=True)
     mcp = create_mcp(instance=FastMCP('JEV Decision Plugin',auth=auth,mask_error_details=True))
