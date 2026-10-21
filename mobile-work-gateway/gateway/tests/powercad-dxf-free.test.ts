@@ -50,3 +50,12 @@ test('flag off hides Power-CAD tool; flag on exposes it to the OAuth owner',asyn
  assert.equal((await names()).includes('powercad_generate_dxf'),false);
  assert.equal((await names('true')).filter((n:string)=>n==='powercad_generate_dxf').length,1);
 });
+
+test('Power-CAD wire schema uses homogeneous bounded coordinate arrays',async()=>{
+ const response=await mcp(new Request('https://example.com/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list'})}),{OWNER_ID:'1',POWER_CAD_FREE_DXF_ENABLED:'true'} as any,'1');
+ const tool=((await response.json()) as any).result.tools.find((t:any)=>t.name==='powercad_generate_dxf');
+ let coordinates=0;
+ function visit(node:any){if(!node||typeof node!=='object')return;assert.ok(!Array.isArray(node.items),'positional items are not connector-compatible');if(node.type==='array'&&node.minItems===2&&node.maxItems===2&&node.items?.type==='number')coordinates++;for(const value of Object.values(node))if(Array.isArray(value))value.forEach(visit);else visit(value);}
+ visit(tool.inputSchema);assert.ok(coordinates>=1,'coordinate schema must be present (shared coordinates may use $ref)');
+ for(const start of [[0],[0,0,0]])await assert.rejects(()=>generatePowerCadDxf({drawing_name:'bad-coordinate',entities:[{type:'line',start,end:[1,1]}]}),PowerCadDxfError);
+});
