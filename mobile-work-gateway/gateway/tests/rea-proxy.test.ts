@@ -35,7 +35,7 @@ test('relay only scoped tool call through private binding with secret',async()=>
  }}} as unknown as Env;
  const r=await relayReaTool(e,'rea_bridge_status',{});
  assert.equal(invoked,true);
- assert.equal(r.isError,undefined);
+ assert.equal(r.isError,false);
  assert.match(r.content[0].text,/analysis_ready/);
 });
 test('malformed response never reports successful execution',async()=>{
