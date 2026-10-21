@@ -6,6 +6,7 @@ import {BrowserTools,readShape,actShape,profileShape} from './browser.js';
 import type {Env} from './types.js';
 import {generatePowerCadDxf} from './powercad-dxf-free.js';
 import {z} from 'zod';
+import {reaBridgeAvailable,relayReaTool} from './rea-proxy.js';
 import {reserveDraft,sha256,type DraftRequest} from './orch-ledger.js';
 export async function mcp(request:Request,env:Env,owner:string){
  const service=new Service(env,owner),server=new McpServer({name:'Mobile Work Gateway',version:'0.2.0'});
@@ -52,6 +53,28 @@ export async function mcp(request:Request,env:Env,owner:string){
     return {content:[{type:'text' as const,text:JSON.stringify(r)}]};}
     catch(error){return {isError:true,content:[{type:'text' as const,text:error instanceof Error && /^[a-z_0-9]+$/.test(error.message)?error.message:'orch_request_failed'}]};}
   });
+ }
+
+ // Owner OAuth is enforced in worker.ts. This integration stays invisible
+ // unless the bridge binding AND its secret AND the opt-in flag are configured.
+ if(reaBridgeAvailable(env)){
+  server.registerTool('rea_bridge_status',{
+   description:'Check whether the optional private REA analysis runner is actually available; does not execute analysis.',
+   inputSchema:{},
+   annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}
+  },async(args:unknown)=>relayReaTool(env,'rea_bridge_status',args));
+  const fileId=z.string().regex(/^[A-Za-z0-9_-]{20,128}$/);
+  const digest=z.string().regex(/^[0-9a-fA-F]{64}$/);
+  server.registerTool('rea_submit_drive_analysis',{
+   description:'Submit a single owner-approved private Google Drive JavaScript artifact for static REA analysis; returns blocked if executor is offline. Original files are not modified.',
+   inputSchema:{drive_file_id:fileId,sha256:digest,approval:z.literal(true),analysis_type:z.literal('javascript-static'),idempotency_key:z.string().regex(/^[A-Za-z0-9_-]{12,100}$/)},
+   annotations:{readOnlyHint:false,destructiveHint:false,idempotentHint:true,openWorldHint:false}
+  },async(args:unknown)=>relayReaTool(env,'rea_submit_drive_analysis',args));
+  server.registerTool('rea_get_analysis_status',{
+   description:'Read owner-approved REA run status without mutating artifacts.',
+   inputSchema:{run_id:z.string().regex(/^[a-fA-F0-9-]{16,64}$/)},
+   annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}
+  },async(args:unknown)=>relayReaTool(env,'rea_get_analysis_status',args));
  }
  const transport=new WebStandardStreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});await server.connect(transport);
  return transport.handleRequest(request);

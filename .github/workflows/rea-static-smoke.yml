@@ -1,0 +1,56 @@
+name: REA synthetic static smoke (free public runner)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/rea-static-smoke.yml'
+      - 'mobile-work-gateway/rea-smoke/**'
+      - 'mobile-work-gateway/gateway/src/rea-proxy.ts'
+      - 'mobile-work-gateway/gateway/src/mcp.ts'
+      - 'mobile-work-gateway/gateway/src/types.ts'
+permissions:
+  contents: read
+jobs:
+  rea-static-smoke:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify node and fixture, never fetch private artifacts
+        run: |
+          node --version
+          node --check mobile-work-gateway/rea-smoke/fixture/index.js
+          node --check mobile-work-gateway/rea-smoke/fixture/sum.js
+          test -f mobile-work-gateway/rea-smoke/fixture/package.json
+      - name: Real REA JS analyzer on synthetic public fixture only
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 150s npm exec --yes --package=rea-agents@6.7.0 -- rea analyze-javascript-application "$GITHUB_WORKSPACE/mobile-work-gateway/rea-smoke/fixture" --json > "$RUNNER_TEMP/rea-evidence.json"
+          test -s "$RUNNER_TEMP/rea-evidence.json"
+          REA_EVIDENCE="$RUNNER_TEMP/rea-evidence.json" node -e 'const f=require("fs");const x=JSON.parse(f.readFileSync(process.env.REA_EVIDENCE,"utf8"));if(!x||typeof x!=="object")process.exit(1);console.log(JSON.stringify({status:"parsed",root_keys:Object.keys(x).slice(0,15),bytes:f.statSync(process.env.REA_EVIDENCE).size}))'
+      - name: Never publish analysis output or secrets
+        run: echo 'Completed synthetic REA smoke with no artifact upload.'
+
+  gateway-static-check:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: mobile-work-gateway/gateway
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run check
+      - run: npm test
