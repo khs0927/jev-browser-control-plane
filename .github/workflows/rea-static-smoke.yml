@@ -1,5 +1,6 @@
 name: REA synthetic static smoke (free public runner)
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - '.github/workflows/rea-static-smoke.yml'
@@ -11,7 +12,7 @@ permissions:
   contents: read
 jobs:
   rea-static-smoke:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -38,7 +39,7 @@ jobs:
         run: echo 'Completed synthetic REA smoke with no artifact upload.'
 
   gateway-static-check:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 8
     defaults:
