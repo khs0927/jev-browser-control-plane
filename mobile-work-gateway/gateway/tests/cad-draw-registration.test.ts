@@ -60,3 +60,24 @@ test('MCP tools/list defaults to no cad_draw and opt-in exposes exactly one',asy
  assert.equal((await ask('false')).includes('cad_draw'),false);
  assert.equal((await ask('true')).filter((x:string)=>x==='cad_draw').length,1);
 });
+
+
+test('MCP tools/call remains fail-closed even when opt-in flag is true',async()=>{
+ const headers={'Content-Type':'application/json',Accept:'application/json, text/event-stream'};
+ const env={OWNER_ID:'owner',CAD_DRAW_ENABLED:'true'};
+ const invoke=async(method:string,id:number,params?:unknown)=>{
+  const response=await mcp(new Request('https://example.com/mcp',{method:'POST',headers,
+   body:JSON.stringify({jsonrpc:'2.0',id,method,...(params?{params}:{})})}),env as any,'owner');
+  assert.equal(response.status,200);
+  return await response.json() as any;
+ };
+ await invoke('initialize',1,{protocolVersion:'2025-03-26',capabilities:{},
+  clientInfo:{name:'cad-disabled-executor-test',version:'1'}});
+ const call=await invoke('tools/call',2,{name:'cad_draw',arguments:valid});
+ assert.equal(call.result?.content?.length,1);
+ const output=JSON.parse(call.result.content[0].text);
+ assert.equal(output.status,'backend_unavailable');
+ assert.equal(output.execution_performed,false);
+ assert.equal(output.independently_verified,false);
+ assert.equal(output.customer_delivery_approved,false);
+});
