@@ -47,5 +47,5 @@ test('MCP canary opt-in changes tool list only when enabled',async()=>{
   assert.equal(r.status,200);return (await r.json() as any).result.tools.map((t:any)=>t.name);
  };
  assert.equal((await list()).includes('cad_fixture_dxf'),false);
- assert.equal((await list('true')).filter(n=>n==='cad_fixture_dxf').length,1);
+ assert.equal((await list('true')).filter((n:string)=>n==='cad_fixture_dxf').length,1);
 });

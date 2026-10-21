@@ -5,6 +5,7 @@ import {Service} from './service.js';
 import {BrowserTools,readShape,actShape,profileShape} from './browser.js';
 import {z} from 'zod';
 import {createCadFixture} from './cad-fixture.js';
+import {cadDrawShape,cadDrawRegistrationOnly} from './cad-draw-registration.js';
 import type {Env} from './types.js';
 export async function mcp(request:Request,env:Env,owner:string){
  const service=new Service(env,owner),server=new McpServer({name:'Mobile Work Gateway',version:'0.2.0'});
@@ -26,6 +27,14 @@ export async function mcp(request:Request,env:Env,owner:string){
   annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}
  },async args=>{try{const result=await createCadFixture(args);return {content:[{type:'text' as const,text:JSON.stringify(result)}]};}
  catch{return {isError:true,content:[{type:'text' as const,text:'invalid_fixture_request'}]};}});
+ // New DrawPlan tool is registration-only. This conditional stays FALSE by
+ // default; its handler never calls a CAD engine or writes an artifact.
+ // Existing Worker OAuth verifies the caller is the configured owner.
+ if(env.CAD_DRAW_ENABLED==='true')server.registerTool('cad_draw',{
+  description:'Power-CAD DrawPlan contract (registration only). Validates mm and job identity; returns backend_unavailable. Never claims drawing success. Execution requires a separately reviewed authenticated HMAC runner.',
+  inputSchema:cadDrawShape,
+  annotations:{readOnlyHint:false,destructiveHint:false,idempotentHint:false,openWorldHint:false}
+ },async args=>({content:[{type:'text' as const,text:JSON.stringify(cadDrawRegistrationOnly(args))}]}));
  const transport=new WebStandardStreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});await server.connect(transport);
  return transport.handleRequest(request);
 }
