@@ -20,15 +20,16 @@ export async function mcp(request:Request,env:Env,owner:string){
  for(const [name,description,inputSchema,ro] of browserDefs)server.registerTool(name,{description,inputSchema,annotations:{readOnlyHint:ro,destructiveHint:!ro,idempotentHint:ro,openWorldHint:true}},async(args:unknown)=>{try{const r:any=await (browser[name] as (a:unknown)=>Promise<any>).call(browser,args);if(name==='browser_profiles')return {content:[{type:'text' as const,text:JSON.stringify(r)}]};const content:any[]=[{type:'text',text:JSON.stringify(r.result)}];if(r.image)content.push({type:'image',data:r.image,mimeType:'image/jpeg'});return {content};}catch(error){return {isError:true,content:[{type:'text' as const,text:error instanceof Error && /^[a-z_0-9]+$/.test(error.message)?error.message:'browser_failed'}]};}});
  // Explicit opt-in: owner OAuth already enforced by worker.ts; no original-file writes or file hosting.
  if(env.POWER_CAD_FREE_DXF_ENABLED==='true'){
-  const xy=z.tuple([z.number().finite().min(-1000000).max(1000000),z.number().finite().min(-1000000).max(1000000)]);
-  const layer=z.string().regex(/^[A-Za-z][A-Za-z0-9_-]{0,31}$/).optional();
+  // ChatGPT connector tool refresh rejects tuple-form `items:[...]` and deep $ref JSON pointers; use fresh plain arrays (engine re-validates length 2).
+  const xy=()=>z.array(z.number().finite().min(-1000000).max(1000000)).min(2).max(2);
+  const layer=()=>z.string().regex(/^[A-Za-z][A-Za-z0-9_-]{0,31}$/).optional();
   const shapes=z.discriminatedUnion('type',[
-   z.object({type:z.literal('line'),layer,start:xy,end:xy}).strict(),
-   z.object({type:z.literal('polyline'),layer,points:z.array(xy).min(2).max(64),closed:z.boolean().optional()}).strict(),
-   z.object({type:z.literal('circle'),layer,center:xy,radius:z.number().positive().max(100000)}).strict(),
-   z.object({type:z.literal('arc'),layer,center:xy,radius:z.number().positive().max(100000),
+   z.object({type:z.literal('line'),layer:layer(),start:xy(),end:xy()}).strict(),
+   z.object({type:z.literal('polyline'),layer:layer(),points:z.array(xy()).min(2).max(64),closed:z.boolean().optional()}).strict(),
+   z.object({type:z.literal('circle'),layer:layer(),center:xy(),radius:z.number().positive().max(100000)}).strict(),
+   z.object({type:z.literal('arc'),layer:layer(),center:xy(),radius:z.number().positive().max(100000),
     startAngle:z.number().min(0).max(360),endAngle:z.number().min(0).max(360)}).strict(),
-   z.object({type:z.literal('text'),layer,at:xy,text:z.string().min(1).max(100),height:z.number().positive().max(10000)}).strict(),
+   z.object({type:z.literal('text'),layer:layer(),at:xy(),text:z.string().min(1).max(100),height:z.number().positive().max(10000)}).strict(),
   ]);
   server.registerTool('powercad_generate_dxf',{
     description:'Power-CAD free mobile subset: generate a NEW 2D DXF and SVG preview from bounded millimetre geometry (line, polyline, circle, arc, text). Not DWG, no AutoCAD/native backend, no original file editing. Client must save returned dxf_text; independently reopen before any professional use.',
