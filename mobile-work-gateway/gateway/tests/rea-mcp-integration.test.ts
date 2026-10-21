@@ -12,7 +12,7 @@ const post=async(env:Env,id:number,method:string,params?:unknown)=>{
 };
 const token='T'.repeat(48);
 function mockEnv():Env {
- return {REA_BRIDGE_ENABLED:'true',REA_BRIDGE_TOKEN:token,REA_BRIDGE:{
+ return {OWNER_ID:'owner-id',REA_BRIDGE_ENABLED:'true',REA_BRIDGE_TOKEN:token,REA_BRIDGE:{
   async fetch(req:Request){
    assert.equal(req.headers.get('x-rea-bridge-token'),token);
    assert.equal(new URL(req.url).hostname,'rea-staging.internal');
