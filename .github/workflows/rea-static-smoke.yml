@@ -36,3 +36,21 @@ jobs:
           REA_EVIDENCE="$RUNNER_TEMP/rea-evidence.json" node -e 'const f=require("fs");const x=JSON.parse(f.readFileSync(process.env.REA_EVIDENCE,"utf8"));if(!x||typeof x!=="object")process.exit(1);console.log(JSON.stringify({status:"parsed",root_keys:Object.keys(x).slice(0,15),bytes:f.statSync(process.env.REA_EVIDENCE).size}))'
       - name: Never publish analysis output or secrets
         run: echo 'Completed synthetic REA smoke with no artifact upload.'
+
+  gateway-static-check:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: mobile-work-gateway/gateway
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run check
+      - run: npm test
