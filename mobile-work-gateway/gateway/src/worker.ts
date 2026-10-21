@@ -41,5 +41,9 @@ export default {async fetch(req:Request,env:Env,ctx:ExecutionContext){
   if(!env.DB||!env.OAUTH_KV||!env.GITHUB_CLIENT_ID||!env.GITHUB_CLIENT_SECRET||!hasGitHubExecution(env))return new Response('Configuration required',{status:503});
   const provider=new OAuthProvider<Env>({apiRoute:'/mcp',apiHandler:{fetch:(request:any,e:any,c:any)=>{if(!c.auth.scope.includes('mcp:tools')||c.props.ownerId!==e.OWNER_ID)return new Response('Forbidden',{status:403});return mcp(request,e,c.props.ownerId);}},defaultHandler:authHandler,authorizeEndpoint:'/authorize',tokenEndpoint:'/oauth/token',clientRegistrationEndpoint:'/register',scopesSupported:['mcp:tools'],requiredScopes:['mcp:tools'],resourceMetadata:{resource:`${env.PUBLIC_URL}/mcp`,authorization_servers:[env.PUBLIC_URL]},clientIdMetadataDocumentEnabled:false,accessTokenTTL:3600});
   return await provider.fetch(req,env,ctx);
- }catch{return Response.json({error:'request_rejected'},{status:400});}
+ }catch(error){
+  // Safe diagnostics only: never log authorization codes, tokens, client IDs, state, query strings, or headers.
+  console.warn('mobile_work_gateway_request_rejected',{route:url.pathname,error_type:error instanceof Error?error.name:'UnknownError'});
+  return Response.json({error:'request_rejected'},{status:400});
+ }
 }};
