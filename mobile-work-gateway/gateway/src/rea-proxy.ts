@@ -15,6 +15,22 @@ export function reaBridgeAvailable(env:Env):boolean {
 export async function relayReaTool(env:Env,name:string,args:unknown):Promise<ReaToolResult> {
  if(!reaBridgeAvailable(env))return fail('REA_BRIDGE_NOT_CONFIGURED');
  if(!['rea_bridge_status','rea_submit_drive_analysis','rea_get_analysis_status'].includes(name))return fail('REA_TOOL_NOT_ALLOWED');
+ if(name==='rea_submit_drive_analysis'){
+  // A model-supplied approval boolean does not constitute owner authorization.
+  // An operator must separately pin the exact Drive file ID and SHA-256 in a
+  // private secret with an expiry no more than 24 hours away.
+  const p=args&&typeof args==='object'&&!Array.isArray(args)?args as Record<string,unknown>:{};
+  const file=typeof p.drive_file_id==='string'?p.drive_file_id:'';
+  const hash=typeof p.sha256==='string'?p.sha256.toLowerCase():'';
+  const expected=env.REA_APPROVED_FILE||'';
+  const expiry=Date.parse(env.REA_APPROVAL_EXPIRES_AT||'');
+  const now=Date.now();
+  if(p.approval!==true||!file||!/^[a-f0-9]{64}$/.test(hash)
+     || expected!==file+':'+hash
+     || !Number.isFinite(expiry)||expiry<=now||expiry>now+24*60*60*1000)
+   return fail('REA_EXPLICIT_FILE_APPROVAL_REQUIRED');
+ }
+
  try {
   const id=crypto.randomUUID();
   const response=await env.REA_BRIDGE!.fetch(new Request('https://rea-staging.internal/mcp',{
