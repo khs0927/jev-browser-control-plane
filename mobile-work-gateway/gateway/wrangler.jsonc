@@ -1,6 +1,30 @@
 {
- "name":"mobile-work-gateway","main":"src/worker.ts","compatibility_date":"2026-03-01",
- "compatibility_flags":["nodejs_compat"],
- "vars":{"POWER_CAD_FREE_DXF_ENABLED":"true","OWNER_ID":"130247531","REPOSITORY":"khs0927/jev-browser-control-plane","REPOSITORY_ID":"1383744512","WORKFLOW":"mobile-work-environment.yml","REVIEWED_REF":"main","GITHUB_APP_ID":"5309753","GITHUB_APP_INSTALLATION_ID":"171206577"},
- "browser":{"binding":"BROWSER"},"d1_databases":[],"kv_namespaces":[]
+  "name": "mobile-work-gateway",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-03-01",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "vars": {
+    "POWER_CAD_FREE_DXF_ENABLED": "true",
+    "OWNER_ID": "130247531",
+    "REPOSITORY": "khs0927/jev-browser-control-plane",
+    "REPOSITORY_ID": "1383744512",
+    "WORKFLOW": "mobile-work-environment.yml",
+    "REVIEWED_REF": "main",
+    "GITHUB_APP_ID": "5309753",
+    "GITHUB_APP_INSTALLATION_ID": "171206577",
+    "REA_BRIDGE_ENABLED": "false"
+  },
+  "browser": {
+    "binding": "BROWSER"
+  },
+  "d1_databases": [],
+  "kv_namespaces": [],
+  "services": [
+    {
+      "binding": "REA_BRIDGE",
+      "service": "rea-mobile-bridge-staging"
+    }
+  ]
 }
