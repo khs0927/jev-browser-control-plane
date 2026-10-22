@@ -1,0 +1,238 @@
+TAP version 13
+# Subtest: read tool cad_status
+ok 1 - read tool cad_status
+  ---
+  duration_ms: 5.819051
+  type: 'test'
+  ...
+# Subtest: read tool cad_get_document_identity
+ok 2 - read tool cad_get_document_identity
+  ---
+  duration_ms: 0.355289
+  type: 'test'
+  ...
+# Subtest: read tool cad_query
+ok 3 - read tool cad_query
+  ---
+  duration_ms: 0.106644
+  type: 'test'
+  ...
+# Subtest: read tool cad_get
+ok 4 - read tool cad_get
+  ---
+  duration_ms: 0.167827
+  type: 'test'
+  ...
+# Subtest: read tool cad_inspect
+ok 5 - read tool cad_inspect
+  ---
+  duration_ms: 0.182997
+  type: 'test'
+  ...
+# Subtest: read tool cad_layers
+ok 6 - read tool cad_layers
+  ---
+  duration_ms: 0.083288
+  type: 'test'
+  ...
+# Subtest: read tool cad_measure
+ok 7 - read tool cad_measure
+  ---
+  duration_ms: 0.120194
+  type: 'test'
+  ...
+# Subtest: read tool cad_list_targets
+ok 8 - read tool cad_list_targets
+  ---
+  duration_ms: 1.005913
+  type: 'test'
+  ...
+# Subtest: new entities cad_create
+ok 9 - new entities cad_create
+  ---
+  duration_ms: 7.16879
+  type: 'test'
+  ...
+# Subtest: new entities cad_create_many
+ok 10 - new entities cad_create_many
+  ---
+  duration_ms: 4.909208
+  type: 'test'
+  ...
+# Subtest: target edit cad_move
+ok 11 - target edit cad_move
+  ---
+  duration_ms: 3.456507
+  type: 'test'
+  ...
+# Subtest: target edit cad_copy
+ok 12 - target edit cad_copy
+  ---
+  duration_ms: 16.332764
+  type: 'test'
+  ...
+# Subtest: save copy explicitly
+ok 13 - save copy explicitly
+  ---
+  duration_ms: 0.181583
+  type: 'test'
+  ...
+# Subtest: owner mismatch
+ok 14 - owner mismatch
+  ---
+  duration_ms: 2.25809
+  type: 'test'
+  ...
+# Subtest: session owner mismatch
+ok 15 - session owner mismatch
+  ---
+  duration_ms: 0.095701
+  type: 'test'
+  ...
+# Subtest: expired session
+ok 16 - expired session
+  ---
+  duration_ms: 0.057573
+  type: 'test'
+  ...
+# Subtest: abnormally long session
+ok 17 - abnormally long session
+  ---
+  duration_ms: 0.047875
+  type: 'test'
+  ...
+# Subtest: source hash changed
+ok 18 - source hash changed
+  ---
+  duration_ms: 0.052055
+  type: 'test'
+  ...
+# Subtest: stale revision
+ok 19 - stale revision
+  ---
+  duration_ms: 0.147445
+  type: 'test'
+  ...
+# Subtest: inactive session
+ok 20 - inactive session
+  ---
+  duration_ms: 0.062263
+  type: 'test'
+  ...
+# Subtest: missing idempotency
+ok 21 - missing idempotency
+  ---
+  duration_ms: 0.051282
+  type: 'test'
+  ...
+# Subtest: idempotency replay
+ok 22 - idempotency replay
+  ---
+  duration_ms: 0.098851
+  type: 'test'
+  ...
+# Subtest: target shape extra fields
+ok 23 - target shape extra fields
+  ---
+  duration_ms: 0.288345
+  type: 'test'
+  ...
+# Subtest: zero displacement
+ok 24 - zero displacement
+  ---
+  duration_ms: 0.11826
+  type: 'test'
+  ...
+# Subtest: NaN coords
+ok 25 - NaN coords
+  ---
+  duration_ms: 0.065013
+  type: 'test'
+  ...
+# Subtest: copy count too high
+ok 26 - copy count too high
+  ---
+  duration_ms: 0.06022
+  type: 'test'
+  ...
+# Subtest: dangerous delete
+ok 27 - dangerous delete
+  ---
+  duration_ms: 0.080775
+  type: 'test'
+  ...
+# Subtest: unsafe remote exec
+ok 28 - unsafe remote exec
+  ---
+  duration_ms: 0.046405
+  type: 'test'
+  ...
+# Subtest: write on raw file path
+ok 29 - write on raw file path
+  ---
+  duration_ms: 0.0462
+  type: 'test'
+  ...
+# Subtest: save overwrite true
+ok 30 - save overwrite true
+  ---
+  duration_ms: 0.050656
+  type: 'test'
+  ...
+# Subtest: save original name
+ok 31 - save original name
+  ---
+  duration_ms: 0.051151
+  type: 'test'
+  ...
+# Subtest: save existing name
+ok 32 - save existing name
+  ---
+  duration_ms: 0.124055
+  type: 'test'
+  ...
+# Subtest: path traversal
+ok 33 - path traversal
+  ---
+  duration_ms: 0.058144
+  type: 'test'
+  ...
+# Subtest: unsupported hatch
+ok 34 - unsupported hatch
+  ---
+  duration_ms: 0.045641
+  type: 'test'
+  ...
+# Subtest: silent style attr dropping
+ok 35 - silent style attr dropping
+  ---
+  duration_ms: 0.175591
+  type: 'test'
+  ...
+# Subtest: empty create many
+ok 36 - empty create many
+  ---
+  duration_ms: 0.049828
+  type: 'test'
+  ...
+# Subtest: does not mutate trusted session nor request
+ok 37 - does not mutate trusted session nor request
+  ---
+  duration_ms: 0.233808
+  type: 'test'
+  ...
+# Subtest: prototype has 8 reads and 5 writes, not full 79-tool parity
+ok 38 - prototype has 8 reads and 5 writes, not full 79-tool parity
+  ---
+  duration_ms: 0.165016
+  type: 'test'
+  ...
+1..38
+# tests 38
+# suites 0
+# pass 38
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 565.913645
