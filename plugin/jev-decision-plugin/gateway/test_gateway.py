@@ -119,6 +119,12 @@ def test_github_owner_gate(monkeypatch,subject,accepted):
 
 def test_github_oauth_metadata_and_unauthenticated_block(monkeypatch,tmp_path):
     from starlette.testclient import TestClient
+    import github_auth
+    from key_value.aio.stores.memory import MemoryStore
+    # This existing callback test is intentionally offline; only the production
+    # gateway is required to use durable Redis storage.
+    monkeypatch.setattr(github_auth, 'persistent_oauth_storage', lambda: (
+        'offline-synthetic-stable-jwt-signing-key-123456', MemoryStore()))
     from github_auth import github_app
     monkeypatch.setenv('JEV_GITHUB_CLIENT_ID','offline-fixture-id')
     monkeypatch.setenv('JEV_GITHUB_CLIENT_SECRET','offline-fixture-secret')
