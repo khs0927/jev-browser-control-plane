@@ -7,6 +7,7 @@ from mcp.shared.auth import OAuthClientInformationFull
 from pydantic import AnyUrl
 from fastmcp.server.auth.providers.github import GitHubProvider
 from server import create_mcp
+from oauth_storage import persistent_oauth_storage
 
 OWNER_ID = '130247531'
 
@@ -56,10 +57,13 @@ def github_app():
     if resource.scheme != 'https' or not resource.netloc or resource.username or resource.password:
         raise RuntimeError('HTTPS resource required')
     base = f'{resource.scheme}://{resource.netloc}'
+    # No fallback to ephemeral storage when secrets/backend are missing.
+    jwt_signing_key, client_storage = persistent_oauth_storage()
     auth = OwnerGitHubProvider(
         client_id=os.environ['JEV_GITHUB_CLIENT_ID'],
         client_secret=os.environ['JEV_GITHUB_CLIENT_SECRET'],
         base_url=base, required_scopes=['read:user'],
+        jwt_signing_key=jwt_signing_key, client_storage=client_storage,
         allowed_client_redirect_uris=[
             'https://chatgpt.com/connector/oauth/*',
             'https://oauth-redirect.googleusercontent.com/r/*',
