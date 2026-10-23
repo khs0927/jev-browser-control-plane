@@ -19,8 +19,13 @@ jobs:
         env:
           REVIEWED_SHA: ${{ vars.MWG_REVIEWED_SHA }}
         run: |
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          echo "Actual checked-out SHA: $ACTUAL_SHA"
+          echo "Reviewed SHA (MWG_REVIEWED_SHA): $REVIEWED_SHA"
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then echo "Refusing: ref is not refs/heads/main" >&2; exit 1; fi
-          if [ -z "$REVIEWED_SHA" ] || [ "$GITHUB_SHA" != "$REVIEWED_SHA" ]; then echo "Refusing: GITHUB_SHA does not match MWG_REVIEWED_SHA" >&2; exit 1; fi
+          if [ -z "$REVIEWED_SHA" ]; then echo "Refusing: MWG_REVIEWED_SHA is empty" >&2; exit 1; fi
+          if [ "$ACTUAL_SHA" != "$REVIEWED_SHA" ]; then echo "Refusing: actual SHA $ACTUAL_SHA does not match reviewed SHA $REVIEWED_SHA" >&2; exit 1; fi
+          echo "SHA guard passed: $ACTUAL_SHA"
         working-directory: .
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
