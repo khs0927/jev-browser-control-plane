@@ -1,0 +1,31 @@
+name: Graphify real MCP tools-call smoke (no deployment)
+on:
+  push:
+    branches: [feat/graphify-codegraph-mcp-20261024]
+    paths:
+      - mobile-work-gateway/gateway/src/graphify-snapshot.ts
+      - mobile-work-gateway/gateway/src/mcp.ts
+      - mobile-work-gateway/gateway/scripts/graphify-mcp-live-smoke.ts
+      - .github/workflows/graphify-mcp-live-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mcp_live_smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: mobile-work-gateway/gateway
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: Type check
+        run: npm run check
+      - name: Call Graphify status/find/path through real MCP transport against generated GitHub snapshot
+        run: node --import tsx scripts/graphify-mcp-live-smoke.ts
