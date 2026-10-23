@@ -3,9 +3,12 @@ on:
   push:
     branches:
       - feat/graphify-codegraph-mcp-20261024
+      - main
     paths:
       - .github/workflows/graphify-codegraph.yml
       - mobile-work-gateway/gateway/**
+  schedule:
+    - cron: "7 20 * * *"
   workflow_dispatch:
 permissions:
   contents: read
@@ -28,7 +31,7 @@ jobs:
           python-version: "3.12"
       - name: Install official Graphify package
         run: |
-          python -m pip install graphifyy
+          python -m pip install graphifyy==0.9.94
           graphify --help
           python -m pip show graphifyy
       - name: Extract code-only graph (no AI backend)
@@ -53,8 +56,55 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: graphify-gateway-codegraph
-          path: |
-            mobile-work-gateway/gateway/graphify-out/graph.json
-            mobile-work-gateway/gateway/graphify-out/GRAPH_REPORT.md
+          path: mobile-work-gateway/gateway/graphify-out/graph.json
           retention-days: 14
           if-no-files-found: error
+  publish:
+    needs: graphify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout dedicated public-code-only snapshot branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: graphify-snapshots
+          persist-credentials: true
+      - name: Download built graph (no rebuild, no model API)
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: graphify-gateway-codegraph
+          path: ${{ runner.temp }}/graphify-artifact
+      - name: Save graph and provenance without changing main
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          mkdir -p graphify-out
+          cp "$RUNNER_TEMP/graphify-artifact/graph.json" graphify-out/graph.json
+          python - <<'PY'
+          import hashlib,json,os,pathlib
+          p=pathlib.Path("graphify-out/graph.json")
+          b=p.read_bytes()
+          o=json.loads(b)
+          info={
+            "source_repository":"khs0927/jev-browser-control-plane",
+            "source_ref":os.environ["GITHUB_REF"],
+            "source_sha":os.environ["SOURCE_SHA"],
+            "graph_sha256":hashlib.sha256(b).hexdigest(),
+            "nodes":len(o.get("nodes", [])),
+            "edges":len(o.get("links", o.get("edges", []))),
+            "graphify_version":o.get("graph",{}).get("graphify_version"),
+            "backend":"none",
+            "code_only":True
+          }
+          pathlib.Path("graphify-out/manifest.json").write_text(json.dumps(info,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
+          print(json.dumps(info))
+          PY
+          git config user.name "graphify-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add graphify-out/graph.json graphify-out/manifest.json
+          if ! git diff --cached --quiet; then
+            git commit -m "graphify: update public gateway codegraph snapshot"
+            git push origin HEAD:graphify-snapshots
+          fi
