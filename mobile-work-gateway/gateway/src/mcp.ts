@@ -6,6 +6,7 @@ import {BrowserTools,readShape,actShape,profileShape} from './browser.js';
 import type {Env} from './types.js';
 import {generatePowerCadDxf} from './powercad-dxf-free.js';
 import {z} from 'zod';
+import {fetchVerifiedGraph,graphifySearch,graphifyPath,GraphifySnapshotError} from './graphify-snapshot.js';
 import {reaBridgeAvailable,relayReaTool} from './rea-proxy.js';
 import {reserveDraft,sha256,type DraftRequest} from './orch-ledger.js';
 export async function mcp(request:Request,env:Env,owner:string){
@@ -75,6 +76,27 @@ export async function mcp(request:Request,env:Env,owner:string){
    inputSchema:{run_id:z.string().regex(/^[a-fA-F0-9-]{16,64}$/)},
    annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}
   },async(args:unknown)=>relayReaTool(env,'rea_get_analysis_status',args));
+ }
+
+ // Owner-only, read-only Graphify graph adapter; served data is the verified,
+ // public-code-only snapshot built in GitHub Actions, not the native Python MCP.
+ if(env.GRAPHIFY_SNAPSHOT_ENABLED==='true'){
+  const send=(value:unknown)=>({content:[{type:'text' as const,text:JSON.stringify(value)}]});
+  const fail=(error:unknown)=>({isError:true,content:[{type:'text' as const,text:error instanceof GraphifySnapshotError?error.message:'graphify_query_failed'}]});
+  server.registerTool('graphify_snapshot_status',{
+   description:'Read the provenance, SHA-256 and graph counts of the owner-verified Graphify public gateway code snapshot. This is a lightweight read-only adapter, not Graphify Python MCP.',
+   inputSchema:{},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false},
+  },async()=>{try{const {manifest,graph}=await fetchVerifiedGraph();return send({status:'verified',adapter:'graphify_codegraph_snapshot',source_sha:manifest.source_sha,sha256:manifest.graph_sha256,graphify_version:manifest.graphify_version,nodes:graph.nodes.length,edges:(graph.links??graph.edges??[]).length});}catch(e){return fail(e);}});
+  server.registerTool('graphify_find_nodes',{
+   description:'Search the verified Graphify public gateway code graph for a code symbol, module, or file. Read-only; enter at least 2 characters. Does not read private repositories.',
+   inputSchema:{term:z.string().trim().min(2).max(100),limit:z.number().int().min(1).max(20).optional()},
+   annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false},
+  },async(args:{term:string;limit?:number})=>{try{const {graph,manifest}=await fetchVerifiedGraph();return send({...graphifySearch(graph,args.term,args.limit??10),source_sha:manifest.source_sha});}catch(e){return fail(e);}});
+  server.registerTool('graphify_shortest_path',{
+   description:'Find a bounded shortest relationship path between two unique Graphify code nodes. Prefer exact node IDs returned by graphify_find_nodes. Public gateway code graph only.',
+   inputSchema:{start:z.string().trim().min(1).max(200),end:z.string().trim().min(1).max(200),max_hops:z.number().int().min(1).max(8).optional()},
+   annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false},
+  },async(args:{start:string;end:string;max_hops?:number})=>{try{const {graph,manifest}=await fetchVerifiedGraph();return send({...graphifyPath(graph,args.start,args.end,args.max_hops??6),source_sha:manifest.source_sha});}catch(e){return fail(e);}});
  }
  const transport=new WebStandardStreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});await server.connect(transport);
  return transport.handleRequest(request);
