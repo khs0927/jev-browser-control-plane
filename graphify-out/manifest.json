@@ -1,8 +1,8 @@
 {
   "source_repository": "khs0927/jev-browser-control-plane",
-  "source_ref": "refs/heads/feat/graphify-codegraph-mcp-20261024",
-  "source_sha": "825b6c8024429bba5087326fa1fa078d6016ddf4",
-  "graph_sha256": "a46d34fe78b64a960e6a0b1b9f5529501528101845b923bfd23cd7c88aef0425",
+  "source_ref": "refs/heads/main",
+  "source_sha": "d680375eedb7495f6c62364a0e8f647c3d03ff17",
+  "graph_sha256": "dfd108514db9a9a858ef1c097f7e0b17af9e813dd26d22eea60f30fc08ea085f",
   "nodes": 219,
   "edges": 459,
   "graphify_version": "0.9.94",
