@@ -1,8 +1,8 @@
 {
   "source_repository": "khs0927/jev-browser-control-plane",
   "source_ref": "refs/heads/main",
-  "source_sha": "d680375eedb7495f6c62364a0e8f647c3d03ff17",
-  "graph_sha256": "dfd108514db9a9a858ef1c097f7e0b17af9e813dd26d22eea60f30fc08ea085f",
+  "source_sha": "3f79b943f0a3f430d84431b4fa1c0825bbdf098a",
+  "graph_sha256": "8279b4b10a2b109f2acb5be8e942b263073515b1a913fff4d877bf40c583ef74",
   "nodes": 219,
   "edges": 459,
   "graphify_version": "0.9.94",
