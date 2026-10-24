@@ -1,0 +1,44 @@
+name: chatgpt-vps
+services:
+  runtime:
+    build: .
+    image: chatgpt-vps:local
+    restart: unless-stopped
+    init: true
+    shm_size: 1gb
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      RUST_LOG: warn
+      DISPLAY: :99
+    volumes:
+      - runtime-home:/home/runner
+    secrets:
+      - vnc_password
+    ports:
+      - "127.0.0.1:6080:6080"
+    healthcheck:
+      test: ["CMD", "python3", "/usr/local/bin/runtime_health.py"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    user: "0:0"
+    profiles: ["tunnel"]
+    network_mode: service:runtime
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run", "--token-file", "/run/secrets/tunnel_token"]
+    secrets:
+      - tunnel_token
+    depends_on:
+      runtime:
+        condition: service_healthy
+volumes:
+  runtime-home:
+secrets:
+  vnc_password:
+    file: ./secrets/vnc_password
+  tunnel_token:
+    file: ./secrets/tunnel_token

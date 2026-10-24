@@ -1,0 +1,5 @@
+.env
+vendor/
+state/
+secrets/
+evidence/*.json

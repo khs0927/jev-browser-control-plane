@@ -1,0 +1,36 @@
+name: ChatGPT VPS package
+on:
+  push:
+    paths: ['deploy/chatgpt-vps/**', '.github/workflows/chatgpt-vps-validate.yml']
+  pull_request:
+    paths: ['deploy/chatgpt-vps/**', '.github/workflows/chatgpt-vps-validate.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch pinned primary source
+        run: python3 deploy/chatgpt-vps/bootstrap.py
+      - name: Install upstream frontend dependencies
+        working-directory: deploy/chatgpt-vps/vendor/chatcmd/web
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check upstream browser bridge
+        working-directory: deploy/chatgpt-vps/vendor/chatcmd
+        run: node --test chatgpt-extension/*.test.cjs
+      - name: Validate deployment package
+        run: |
+          python3 -m py_compile deploy/chatgpt-vps/bootstrap.py deploy/chatgpt-vps/preflight.py
+          sh -n deploy/chatgpt-vps/install.sh deploy/chatgpt-vps/entrypoint.sh deploy/chatgpt-vps/browser.sh
+          mkdir -p deploy/chatgpt-vps/secrets
+          printf 'ci-fixture' > deploy/chatgpt-vps/secrets/vnc_password
+          printf 'not-a-live-token' > deploy/chatgpt-vps/secrets/tunnel_token
+          docker compose -f deploy/chatgpt-vps/compose.yaml config -q
+      - name: Build runtime image
+        run: docker compose -f deploy/chatgpt-vps/compose.yaml build runtime
