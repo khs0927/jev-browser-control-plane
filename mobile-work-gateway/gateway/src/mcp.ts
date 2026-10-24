@@ -5,6 +5,7 @@ import {Service} from './service.js';
 import {BrowserTools,readShape,actShape,profileShape} from './browser.js';
 import type {Env} from './types.js';
 import {generatePowerCadDxf} from './powercad-dxf-free.js';
+import {architecturalShapeSchema,generatePowerCadArchitecturalDxf} from './powercad-architectural-free.js';
 import {z} from 'zod';
 import {fetchVerifiedGraph,graphifySearch,graphifyPath,GraphifySnapshotError} from './graphify-snapshot.js';
 import {reaBridgeAvailable,relayReaTool} from './rea-proxy.js';
@@ -42,6 +43,14 @@ export async function mcp(request:Request,env:Env,owner:string){
     return {content:[{type:'text' as const,text:JSON.stringify(d)}]};}
     catch{return {isError:true,content:[{type:'text' as const,text:'invalid_powercad_dxf_request'}]};}
   });
+  server.registerTool('powercad_generate_architectural_dxf',{
+   description:'CAD-free NEW 2D architectural DXF: rectangle, polygon, walls, windows, door swing, columns, room outlines/labels, display-only nonassociative dimensions, points and existing primitives. Returns DXF and SVG, no original edit, DWG or compliance guarantees.',
+   inputSchema:{drawing_name:z.string().min(1).max(80),entities:z.array(architecturalShapeSchema).min(1).max(60)},
+   annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false},
+  },async(args:unknown)=>{try{
+   const d=await generatePowerCadArchitecturalDxf(args);
+   return {content:[{type:'text' as const,text:JSON.stringify(d)}]};
+  }catch{return {isError:true,content:[{type:'text' as const,text:'invalid_powercad_architectural_request'}]};}});
  }
  // Explicit opt-in: universal orchestrator ledger (reservation only, never executes). Requires a separate ORCH_DB binding with the reviewed schema applied.
  if(env.ORCH_LEDGER_ENABLED==='true'&&env.ORCH_DB){
