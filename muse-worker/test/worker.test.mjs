@@ -51,7 +51,7 @@ test('chat conversion preserves history, trims prioritized tools and renames sel
 test('successful non-stream chat uses correct upstream authentication and restores tools', async () => {
   globalThis.fetch = async (url, options) => {
     assert.equal(url, 'https://api.meta.ai/v1/responses');
-    assert.equal(options.redirect, 'error');
+    assert.equal(options.redirect, 'manual');
     assert.equal(options.headers.authorization, 'Bearer ' + env.MUSE_API_KEY);
     assert.equal(JSON.parse(options.body).tools[0].name, 'client_read_file');
     return upstreamJSON({ id: 'r1', model: 'muse-spark-1.3-contributor', output: [
