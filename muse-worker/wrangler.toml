@@ -1,0 +1,6 @@
+name = "muse-router-gateway"
+main = "src/worker.mjs"
+compatibility_date = "2026-11-04"
+
+# 1차 배포는 workers.dev 주소로만 (라우트 확인 후 커스텀 도메인 추가)
+workers_dev = true
