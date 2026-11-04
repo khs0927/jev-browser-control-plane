@@ -351,7 +351,8 @@ export default {
 
     const path = new URL(request.url).pathname;
     if (!((path === '/v1/models' && request.method === 'GET') ||
-          (path === '/v1/chat/completions' && request.method === 'POST'))) {
+          (path === '/v1/chat/completions' && request.method === 'POST') ||
+          (path === '/debug' && request.method === 'GET'))) {
       return error('not found', 404);
     }
     const secrets = [env.CALLER_BEARER_SECRET, env.MUSE_API_KEY, refresh];
@@ -367,6 +368,23 @@ export default {
         if (e instanceof RangeError) return error('request body too large', 413);
         return error(e instanceof SyntaxError || e instanceof TypeError ? 'invalid JSON or request body' : e.message, 400);
       }
+    }
+    if (path === '/debug') {
+      const probes = {};
+      for (const [label, url] of Object.entries({
+        meta: 'https://api.meta.ai/v1/models',
+        example: 'https://example.com',
+        trace: 'https://www.cloudflare.com/cdn-cgi/trace',
+      })) {
+        try {
+          const r = await fetch(url, { headers: label === 'meta' ? { authorization: 'Bearer ' + env.MUSE_API_KEY } : {} });
+          const text = await r.text();
+          probes[label] = { status: r.status, ok: r.ok, head: text.slice(0, 120) };
+        } catch (e) {
+          probes[label] = { error: String(e && e.message || e) };
+        }
+      }
+      return json(probes, 200);
     }
     let upstream;
     try {
