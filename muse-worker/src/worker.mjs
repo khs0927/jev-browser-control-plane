@@ -351,7 +351,8 @@ export default {
 
     const path = new URL(request.url).pathname;
     if (!((path === '/v1/models' && request.method === 'GET') ||
-          (path === '/v1/chat/completions' && request.method === 'POST'))) {
+          (path === '/v1/chat/completions' && request.method === 'POST') ||
+          (path === '/debug' && request.method === 'GET'))) {
       return error('not found', 404);
     }
     const secrets = [env.CALLER_BEARER_SECRET, env.MUSE_API_KEY, refresh];
@@ -367,6 +368,24 @@ export default {
         if (e instanceof RangeError) return error('request body too large', 413);
         return error(e instanceof SyntaxError || e instanceof TypeError ? 'invalid JSON or request body' : e.message, 400);
       }
+    }
+    if (path === '/debug') {
+      const out = {};
+      try {
+        const r1 = await callUpstream('GET', '/v1/models', undefined, env, secrets, request.signal);
+        out.models = { status: r1.status, body: (await r1.text()).slice(0, 300) };
+      } catch (e) { out.models = { error: String(e && e.message || e) }; }
+      try {
+        const r2 = await callUpstream('POST', '/v1/responses',
+          { model: 'muse-spark-1.3', input: '2+2? numeral only', stream: false },
+          env, secrets, request.signal);
+        out.chat = { status: r2.status, body: (await r2.text()).slice(0, 300) };
+      } catch (e) { out.chat = { error: String(e && e.message || e) }; }
+      try {
+        const r3 = await fetch('https://www.cloudflare.com/cdn-cgi/trace');
+        out.trace = { status: r3.status, body: (await r3.text()).slice(0, 200) };
+      } catch (e) { out.trace = { error: String(e && e.message || e) }; }
+      return json(out, 200);
     }
     let upstream;
     try {
