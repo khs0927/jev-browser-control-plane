@@ -297,12 +297,12 @@ function upstreamHeaders(key, accept) {
 async function callUpstream(method, path, payload, env, secrets, signal) {
   const send = key => fetch(UPSTREAM + path, { method,
     headers: upstreamHeaders(key, payload?.stream ? 'text/event-stream' : 'application/json'),
-    body: payload ? JSON.stringify(payload) : undefined, redirect: 'error', signal });
+    body: payload ? JSON.stringify(payload) : undefined, redirect: 'manual', signal });
   let response = await send(env.MUSE_API_KEY);
   if (response.status !== 401 || !env.MUSE_REFRESH_TOKEN) return response;
   try {
     const mint = await fetch(UPSTREAM + '/muse-code/key', { method: 'POST',
-      headers: upstreamHeaders(env.MUSE_REFRESH_TOKEN, 'application/json'), body: '{}', redirect: 'error', signal });
+      headers: upstreamHeaders(env.MUSE_REFRESH_TOKEN, 'application/json'), body: '{}', redirect: 'manual', signal });
     if (!mint.ok) { await mint.body?.cancel(); return response; }
     const body = JSON.parse(await readLimited(mint.body, MAX_BODY));
     if (typeof body.api_key !== 'string' || body.api_key.length < 20 || /[\r\n]/.test(body.api_key) ||
@@ -351,8 +351,7 @@ export default {
 
     const path = new URL(request.url).pathname;
     if (!((path === '/v1/models' && request.method === 'GET') ||
-          (path === '/v1/chat/completions' && request.method === 'POST') ||
-          (path === '/debug' && request.method === 'GET'))) {
+          (path === '/v1/chat/completions' && request.method === 'POST'))) {
       return error('not found', 404);
     }
     const secrets = [env.CALLER_BEARER_SECRET, env.MUSE_API_KEY, refresh];
@@ -369,32 +368,6 @@ export default {
         return error(e instanceof SyntaxError || e instanceof TypeError ? 'invalid JSON or request body' : e.message, 400);
       }
     }
-    if (path === '/debug') {
-      const probes = {};
-      for (const [label, url] of Object.entries({
-        meta: 'https://api.meta.ai/v1/models',
-        meta_redirect_error: 'https://api.meta.ai/v1/models',
-        meta_upstream_headers: 'https://api.meta.ai/v1/models',
-        example: 'https://example.com',
-        trace: 'https://www.cloudflare.com/cdn-cgi/trace',
-      })) {
-        try {
-          const opts = { headers: { authorization: 'Bearer ' + env.MUSE_API_KEY } };
-          if (label === 'meta_redirect_error') opts.redirect = 'error';
-          if (label === 'meta_upstream_headers') {
-            opts.headers = { authorization: 'Bearer ' + env.MUSE_API_KEY, 'x-client-id': 'tbh:exec',
-              'user-agent': 'muse-build/1', 'x-api-version': '1.0.0', 'content-type': 'application/json',
-              accept: 'application/json', redirect: 'error' };
-          }
-          const r = await fetch(url, opts);
-          const text = await r.text();
-          probes[label] = { status: r.status, ok: r.ok, len: text.length, head: text.slice(0, 80) };
-        } catch (e) {
-          probes[label] = { error: String(e && e.message || e) };
-        }
-      }
-      return json(probes, 200);
-    }
     let upstream;
     try {
       upstream = await callUpstream(path === '/v1/models' ? 'GET' : 'POST',
@@ -402,7 +375,10 @@ export default {
     } catch {
       return error('upstream connection failed', 502);
     }
-    if (upstream.status !== 200) return upstreamError(upstream, secrets);
+    if (upstream.status !== 200) {
+      if (upstream.status >= 300 && upstream.status < 400) return error('upstream redirect refused', 502);
+      return upstreamError(upstream, secrets);
+    }
     if (stream) {
       if (!/^text\/event-stream(?:\s*;|\s*$)/i.test(upstream.headers.get('content-type') || '') || !upstream.body) {
         try { await upstream.body?.cancel(); } catch { /* already closed */ }
