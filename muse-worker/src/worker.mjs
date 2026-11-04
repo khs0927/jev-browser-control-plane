@@ -375,12 +375,18 @@ export default {
         const r1 = await callUpstream('GET', '/v1/models', undefined, env, secrets, request.signal);
         out.models = { status: r1.status, body: (await r1.text()).slice(0, 300) };
       } catch (e) { out.models = { error: String(e && e.message || e) }; }
-      try {
-        const r2 = await callUpstream('POST', '/v1/responses',
-          { model: 'muse-spark-1.3', input: '2+2? numeral only', stream: false },
-          env, secrets, request.signal);
-        out.chat = { status: r2.status, body: (await r2.text()).slice(0, 300) };
-      } catch (e) { out.chat = { error: String(e && e.message || e) }; }
+      const tryChat = async (label, model, input) => {
+        try {
+          const r = await callUpstream('POST', '/v1/responses',
+            { model, input, stream: false, max_output_tokens: 64 },
+            env, secrets, request.signal);
+          out[label] = { status: r.status, body: (await r.text()).slice(0, 300) };
+        } catch (e) { out[label] = { error: String(e && e.message || e) }; }
+      };
+      await tryChat('chat_string', 'muse-spark-1.3', '2+2? numeral only');
+      await tryChat('chat_contrib', 'muse-spark-1.3-contributor', '2+2? numeral only');
+      await tryChat('chat_array', 'muse-spark-1.3',
+        [{ role: 'user', content: [{ type: 'input_text', text: '2+2? numeral only' }] }]);
       try {
         const r3 = await fetch('https://www.cloudflare.com/cdn-cgi/trace');
         out.trace = { status: r3.status, body: (await r3.text()).slice(0, 200) };
