@@ -1,0 +1,9 @@
+name = "zen-gateway"
+main = "src/worker.mjs"
+compatibility_date = "2026-01-01"
+workers_dev = true
+
+[env.production]
+name = "zen-gateway"
+
+# 참고: 무료 플랜 Worker 하루 10만 요청 — 일반 사용량엔 충분
