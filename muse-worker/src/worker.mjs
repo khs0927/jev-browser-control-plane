@@ -373,13 +373,22 @@ export default {
       const probes = {};
       for (const [label, url] of Object.entries({
         meta: 'https://api.meta.ai/v1/models',
+        meta_redirect_error: 'https://api.meta.ai/v1/models',
+        meta_upstream_headers: 'https://api.meta.ai/v1/models',
         example: 'https://example.com',
         trace: 'https://www.cloudflare.com/cdn-cgi/trace',
       })) {
         try {
-          const r = await fetch(url, { headers: label === 'meta' ? { authorization: 'Bearer ' + env.MUSE_API_KEY } : {} });
+          const opts = { headers: { authorization: 'Bearer ' + env.MUSE_API_KEY } };
+          if (label === 'meta_redirect_error') opts.redirect = 'error';
+          if (label === 'meta_upstream_headers') {
+            opts.headers = { authorization: 'Bearer ' + env.MUSE_API_KEY, 'x-client-id': 'tbh:exec',
+              'user-agent': 'muse-build/1', 'x-api-version': '1.0.0', 'content-type': 'application/json',
+              accept: 'application/json', redirect: 'error' };
+          }
+          const r = await fetch(url, opts);
           const text = await r.text();
-          probes[label] = { status: r.status, ok: r.ok, head: text.slice(0, 120) };
+          probes[label] = { status: r.status, ok: r.ok, len: text.length, head: text.slice(0, 80) };
         } catch (e) {
           probes[label] = { error: String(e && e.message || e) };
         }
